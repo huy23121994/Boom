@@ -7,8 +7,16 @@ breaking conversational flow. Deployed as a PWA so it can be installed on
 iPhone via "Add to Home Screen" without a Mac/Xcode.
 
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+Active feature: **001 Voice-First Conversation MVP**.
+Read these in order before touching code:
+1. `.specify/specs/001-voice-conversation-mvp/spec.md` — WHAT/WHY (frozen, reviewer-approved 2026-04-28)
+2. `.specify/specs/001-voice-conversation-mvp/plan.md` — HOW: tech stack, module ownership, latency budget, SC verification matrix
+3. `.specify/specs/001-voice-conversation-mvp/research.md` — Phase 0 decisions (transport, VAD, TTS, recovery, etc.)
+4. `.specify/specs/001-voice-conversation-mvp/data-model.md` — entities and bubble state machine
+5. `.specify/specs/001-voice-conversation-mvp/contracts/` — AI proxy + storage adapter contracts
+6. `.specify/specs/001-voice-conversation-mvp/quickstart.md` — manual verification flow
+
+`/speckit-tasks` will produce `tasks.md` next; until then, do not write src/ code (constitution §I).
 <!-- SPECKIT END -->
 
 ## How to work in this repo (spec-driven, non-negotiable)
@@ -64,6 +72,13 @@ user to amend the constitution explicitly first.
 ## Tech stack (locked unless constitution amended)
 
 - **Frontend:** React 19 + TypeScript + Vite 8 (already scaffolded)
+- **Styling:** UnoCSS with `@unocss/preset-wind3` (Tailwind v3-compatible
+  utility classes). Custom shortcuts in `uno.config.ts` for design tokens —
+  `text-default`, `text-muted`, `bg-default`, `bg-elevated`, `border-default`.
+- **Theme:** Three modes (`light` / `dark` / `system`); applied by toggling
+  `dark` class on `<html>`; persisted in `boom:prefs.theme` (default `system`).
+- **State:** Zustand (single global store at `src/state/conversation.ts`).
+  No Context provider, no useReducer.
 - **AI inference:** OpenAI-compatible proxy at
   `https://9router-production-5040.up.railway.app/v1`
   - Default model: `gemini/gemini-2.5-flash`
@@ -72,6 +87,7 @@ user to amend the constitution explicitly first.
   Whisper via proxy is the upgrade path if accuracy is insufficient.
 - **TTS (text-to-speech):** Browser `SpeechSynthesis` API for MVP. Upgrade
   path: Google Cloud TTS free tier (1M chars/month) or Edge TTS.
+- **VAD:** energy-threshold over `AudioContext.AnalyserNode` (hand-rolled, zero deps; research §5 amended 2026-04-28).
 - **Packaging:** Pure PWA first (`vite-plugin-pwa`). Capacitor only if a PWA
   limitation actively blocks the user's daily-use scenario.
 
