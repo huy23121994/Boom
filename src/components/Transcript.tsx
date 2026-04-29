@@ -1,5 +1,10 @@
 import { useEffect, useRef, type FC } from 'react'
-import { useTurns, type ConversationTurn } from '@/state/conversation'
+import {
+  useConversationStore,
+  usePrefs,
+  useTurns,
+  type ConversationTurn,
+} from '@/state/conversation'
 
 interface TranscriptProps {
   open: boolean
@@ -20,6 +25,7 @@ function formatRelative(timestamp: number, now: number): string {
 
 export const Transcript: FC<TranscriptProps> = ({ open, onClose }) => {
   const turns = useTurns()
+  const prefs = usePrefs()
   const listRef = useRef<HTMLDivElement>(null)
   const now = Date.now()
 
@@ -28,6 +34,17 @@ export const Transcript: FC<TranscriptProps> = ({ open, onClose }) => {
       listRef.current.scrollTop = listRef.current.scrollHeight
     }
   }, [open, turns.length])
+
+  const handleTogglePersist = (): void => {
+    useConversationStore.getState().togglePersist(!prefs.persistEnabled)
+  }
+
+  const handleClearAll = (): void => {
+    if (turns.length === 0) return
+    if (window.confirm('Clear all conversation history? This cannot be undone.')) {
+      useConversationStore.getState().clearAll()
+    }
+  }
 
   return (
     <aside
@@ -55,6 +72,28 @@ export const Transcript: FC<TranscriptProps> = ({ open, onClose }) => {
           </svg>
         </button>
       </header>
+      <div className="transcript-toolbar">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={prefs.persistEnabled}
+          onClick={handleTogglePersist}
+          className={`persist-toggle ${prefs.persistEnabled ? 'is-on' : ''}`}
+        >
+          <span className="persist-track" aria-hidden="true">
+            <span className="persist-thumb" />
+          </span>
+          <span className="persist-label">Save to this device</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleClearAll}
+          disabled={turns.length === 0}
+          className="clear-all-button"
+        >
+          Clear all
+        </button>
+      </div>
       <div className="transcript-list" ref={listRef}>
         {turns.length === 0 ? (
           <p className="transcript-empty">Your conversation will appear here.</p>

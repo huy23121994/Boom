@@ -251,7 +251,7 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
 
   refs.sttHandle?.stop()
   refs.sttHandle = null
-  await new Promise((r) => setTimeout(r, 50))
+  await new Promise((r) => setTimeout(r, 400))
 
   const finalText = refs.finalTranscript.trim()
   if (finalText.length === 0) {

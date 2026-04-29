@@ -7,7 +7,7 @@
 
 ## Overview
 
-The first usable version of Boom: opening the app drops the user into a hands-free spoken English conversation with an AI tutor. A single centered bubble represents the system, cycling through three visual states (`speaking`, `listening`, `thinking`) as turns alternate. The AI tutor weaves grammar and word-choice corrections into the natural flow of its replies, never as a separate panel. A scrollable text transcript backs the bubble for visual reference. By default, nothing is persisted; the user can opt in to local-only persistence via a settings drawer.
+The first usable version of Boom: opening the app drops the user into a hands-free spoken English conversation with an AI tutor. A single centered bubble represents the system, cycling through three visual states (`speaking`, `listening`, `thinking`) as turns alternate. The AI tutor weaves grammar and word-choice corrections into the natural flow of its replies, never as a separate panel. A scrollable text transcript backs the bubble for visual reference. By default, nothing is persisted; the user can opt in to local-only persistence via controls in the Transcript panel.
 
 This feature is the daily-practice loop the entire product orbits. Every later feature (session review, progress tracking, alternative voices, etc.) presupposes that this loop already feels conversational, low-latency, and private.
 
@@ -68,17 +68,17 @@ Behind or above the bubble, the learner sees a chat-style transcript of the conv
 
 ---
 
-### User Story 4 - Settings drawer: opt-in local persistence and clear-all (Priority: P3)
+### User Story 4 - Persistence controls: opt-in local persistence and clear-all (Priority: P3)
 
-A small low-emphasis settings button in the top-right opens a drawer with two controls: a toggle "Save conversations to this device" (default OFF) and a button "Clear all history." When the toggle is OFF, the conversation lives only in memory and disappears when the tab closes. When ON, the conversation is written to local on-device storage only (never uploaded), so reloading the tab restores the prior conversation. "Clear all history" works in both modes and removes every turn from the current view and from any local storage.
+Persistence controls are located in the header of the Transcript panel: a toggle "Save conversations to this device" (default OFF) and a button "Clear all history." When the toggle is OFF, the conversation lives only in memory and disappears when the tab closes. When ON, the conversation is written to local on-device storage only (never uploaded), so reloading the tab restores the prior conversation. "Clear all history" works in both modes and removes every turn from the current view and from any local storage. *(Implementation note 2026-04-29: originally specified as a separate settings drawer; relocated to the Transcript panel header as a deliberate simplification — same functionality, fewer UI surfaces.)*
 
-**Why this priority**: Persistence is opt-in by design (constitution §V). The default off-state is shipped by Story 1 implicitly. The drawer adds the *opt-in* affordance and the eraser. Without it, learners cannot continue a conversation across reloads — useful, but not blocking the core practice loop.
+**Why this priority**: Persistence is opt-in by design (constitution §V). The default off-state is shipped by Story 1 implicitly. The controls add the *opt-in* affordance and the eraser. Without it, learners cannot continue a conversation across reloads — useful, but not blocking the core practice loop.
 
-**Independent Test**: Open the drawer; toggle persistence ON; complete several turns; reload the page and verify the prior turns reappear. Toggle persistence OFF and complete several turns; reload and verify nothing is restored. With either setting, press "Clear all history" and verify the visible transcript and any stored data are both wiped.
+**Independent Test**: Open the Transcript panel; toggle "Save to this device" ON; complete several turns; reload the page and verify the prior turns reappear. Toggle persistence OFF and complete several turns; reload and verify nothing is restored. With either setting, press "Clear all" and verify the visible transcript and any stored data are both wiped.
 
 **Acceptance Scenarios**:
 
-1. **Given** the drawer is closed, **When** the learner taps the settings icon, **Then** the drawer opens displaying the two controls and does not interrupt any active turn.
+1. **Given** the Transcript panel is closed, **When** the learner opens the Transcript panel, **Then** the persistence toggle and "Clear all history" button are visible in the panel header and opening the panel does not interrupt any active turn.
 2. **Given** the persistence toggle is OFF (default), **When** the learner completes turns and reloads the tab, **Then** the transcript is empty and a fresh greeting begins; no prior text or audio remains anywhere on the device.
 3. **Given** the persistence toggle is ON, **When** the learner completes turns and reloads the tab, **Then** the prior transcript is restored and visible before the next turn begins.
 4. **Given** any number of turns exist (in memory or persisted), **When** the learner taps "Clear all history" and confirms, **Then** the visible transcript becomes empty and any device-local stored conversation is removed.
@@ -151,13 +151,13 @@ These were listed as open questions in the input but have reasonable defaults ca
 
 #### Persistence and privacy controls
 - **FR-017**: The application MUST default to in-memory-only storage of all transcripts and audio: when the persistence toggle is OFF, no transcript, audio, or conversation metadata is written to any persistent storage on the device, and tab close clears all conversation data.
-- **FR-018**: The application MUST provide a settings drawer accessible via a small low-emphasis settings control in the top-right of the screen, opened without interrupting any active turn.
+- **FR-018**: The application MUST provide persistence controls (toggle + clear-all) accessible to the user without interrupting any active turn. *(Amended 2026-04-29: controls are located in the Transcript panel header rather than a dedicated settings drawer; the Transcript panel is accessible at any time via a fixed toggle in the top-left corner.)*
 
-##### Drawer controls
-- **FR-018a**: The drawer MUST contain a toggle labeled "Save conversations to this device" with the default value OFF.
+##### Persistence panel controls
+- **FR-018a**: The Transcript panel header MUST contain a toggle labeled "Save to this device" with the default value OFF. *(Amended 2026-04-29: originally "The drawer MUST contain…"; relocated to Transcript panel header.)*
 - **FR-018b**: When the toggle is ON, the application MUST persist transcripts on the user's device only (no upload to any server) such that a full reload restores the prior transcript.
 - **FR-018c**: When the toggle is switched from ON to OFF, the application MUST remove any device-local stored conversation data.
-- **FR-018d**: The drawer MUST contain a "Clear all history" action that wipes the visible transcript and any device-local stored conversation data, available regardless of the toggle state.
+- **FR-018d**: The Transcript panel header MUST contain a "Clear all" action that wipes the visible transcript and any device-local stored conversation data, available regardless of the toggle state. *(Amended 2026-04-29: originally "The drawer MUST contain…"; relocated to Transcript panel header.)*
 
 #### Error and edge handling
 - **FR-019**: If transcription or AI request fails because of network or proxy unavailability, the application MUST attempt a bounded auto-retry, and if still failing MUST surface a clear, recoverable error indicator and return the bubble to `listening` (or to a clearly idle state) within a reasonable bound; the bubble MUST NOT remain stuck in `thinking` indefinitely.

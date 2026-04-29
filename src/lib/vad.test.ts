@@ -25,6 +25,8 @@ let frameCallbacks: Array<FrameRequestCallback> = []
 
 beforeEach(() => {
   frameCallbacks = []
+  mockNow = 0
+  vi.spyOn(performance, 'now').mockImplementation(() => mockNow)
   trackStop = vi.fn()
   mockAnalyser = {
     fftSize: 0,
@@ -66,13 +68,15 @@ afterEach(() => {
   frameCallbacks = []
 })
 
-function tickFrames(n: number, frequencyValue: number): void {
+let mockNow = 0
+function tickFrames(n: number, frequencyValue: number, msPerFrame = 16): void {
   for (let i = 0; i < n; i++) {
     mockAnalyser.getByteFrequencyData.mockImplementationOnce((arr: Uint8Array) => {
       arr.fill(frequencyValue)
     })
+    mockNow += msPerFrame
     const cb = frameCallbacks.shift()
-    cb?.(performance.now())
+    cb?.(mockNow)
   }
 }
 
@@ -93,11 +97,13 @@ describe('startVAD (energy-based)', () => {
     expect(onStart).toHaveBeenCalledOnce()
   })
 
-  it('fires onSpeechEnd after sustained silence following speech', async () => {
+  it('fires onSpeechEnd after sustained silence following speech (≥2200ms)', async () => {
     const { startVAD } = await import('@/lib/vad')
     const onEnd = vi.fn()
     await startVAD({ onSpeechEnd: onEnd })
     tickFrames(3, 100)
+    expect(onEnd).not.toHaveBeenCalled()
+    tickFrames(80, 0)
     expect(onEnd).not.toHaveBeenCalled()
     tickFrames(80, 0)
     expect(onEnd).toHaveBeenCalledOnce()
@@ -107,8 +113,22 @@ describe('startVAD (energy-based)', () => {
     const { startVAD } = await import('@/lib/vad')
     const onEnd = vi.fn()
     await startVAD({ onSpeechEnd: onEnd })
-    tickFrames(100, 0)
+    tickFrames(200, 0)
     expect(onEnd).not.toHaveBeenCalled()
+  })
+
+  it('resets silence timer if speech briefly resumes mid-pause (hesitation)', async () => {
+    const { startVAD } = await import('@/lib/vad')
+    const onEnd = vi.fn()
+    await startVAD({ onSpeechEnd: onEnd })
+    tickFrames(3, 100)
+    tickFrames(80, 0) // ~1.3s silence — under cap
+    expect(onEnd).not.toHaveBeenCalled()
+    tickFrames(2, 100) // user resumes speaking
+    tickFrames(80, 0) // another ~1.3s silence
+    expect(onEnd).not.toHaveBeenCalled() // still under cap each time
+    tickFrames(80, 0) // total silence after resume now ~2.5s
+    expect(onEnd).toHaveBeenCalledOnce()
   })
 
   it('stop releases mic tracks and closes AudioContext', async () => {

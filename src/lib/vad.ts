@@ -7,8 +7,8 @@ export interface VADHandle {
   stop: () => void
 }
 
-const ENERGY_THRESHOLD = 25
-const SILENCE_FRAMES_TO_END = 75
+const ENERGY_THRESHOLD = 22
+const SILENCE_END_MS = 2200
 
 export async function startVAD(cb: VADCallbacks): Promise<VADHandle> {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -25,7 +25,7 @@ export async function startVAD(cb: VADCallbacks): Promise<VADHandle> {
 
   const data = new Uint8Array(analyser.frequencyBinCount)
   let speechActive = false
-  let silenceCount = 0
+  let silenceStartedAt: number | null = null
   let stopped = false
   let raf = 0
 
@@ -41,12 +41,14 @@ export async function startVAD(cb: VADCallbacks): Promise<VADHandle> {
         speechActive = true
         cb.onSpeechStart?.()
       }
-      silenceCount = 0
+      silenceStartedAt = null
     } else if (speechActive) {
-      silenceCount++
-      if (silenceCount >= SILENCE_FRAMES_TO_END) {
+      const now = performance.now()
+      if (silenceStartedAt === null) {
+        silenceStartedAt = now
+      } else if (now - silenceStartedAt >= SILENCE_END_MS) {
         speechActive = false
-        silenceCount = 0
+        silenceStartedAt = null
         cb.onSpeechEnd?.()
       }
     }

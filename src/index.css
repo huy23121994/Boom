@@ -592,6 +592,119 @@ body {
   color: rgb(220 225 240);
 }
 
+/* ============================================================ *
+ *   TRANSCRIPT TOOLBAR — persistence + clear
+ * ============================================================ */
+
+.transcript-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 18px 12px;
+  border-bottom: 1px solid rgba(20, 22, 35, 0.05);
+}
+.dark .transcript-toolbar {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.persist-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 4px 4px 4px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  border-radius: 999px;
+  transition: background 160ms ease;
+}
+.persist-toggle:hover {
+  background: rgba(20, 22, 35, 0.04);
+}
+.dark .persist-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.persist-toggle:focus-visible {
+  outline: 2px solid rgba(80, 100, 220, 0.45);
+  outline-offset: 2px;
+}
+
+.persist-track {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(20, 22, 35, 0.18);
+  transition: background 200ms ease;
+  flex-shrink: 0;
+}
+.dark .persist-track {
+  background: rgba(255, 255, 255, 0.18);
+}
+.persist-toggle.is-on .persist-track {
+  background: hsl(155 60% 45%);
+}
+
+.persist-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  transition: transform 200ms var(--ease-out-quart);
+}
+.persist-toggle.is-on .persist-thumb {
+  transform: translateX(14px);
+}
+
+.persist-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgb(60 65 80);
+  letter-spacing: -0.005em;
+}
+.dark .persist-label {
+  color: rgb(220 225 235);
+}
+
+.clear-all-button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(20, 22, 35, 0.1);
+  background: transparent;
+  color: rgb(140 35 35);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+}
+.clear-all-button:hover:not(:disabled) {
+  background: rgba(180, 35, 35, 0.08);
+  border-color: rgba(180, 35, 35, 0.3);
+}
+.clear-all-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.dark .clear-all-button {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgb(255 130 130);
+}
+.dark .clear-all-button:hover:not(:disabled) {
+  background: rgba(255, 130, 130, 0.1);
+  border-color: rgba(255, 130, 130, 0.3);
+}
+
 .transcript-list {
   flex: 1;
   min-height: 0;

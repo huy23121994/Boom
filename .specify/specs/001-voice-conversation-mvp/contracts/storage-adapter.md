@@ -61,7 +61,7 @@ export function clearAll(): void;          // removes both keys (composition of 
 ### `clearAll()`
 
 - Composition: calls `clearTranscript()` then `clearPrefs()`.
-- Used by the drawer's "Clear all history" action (FR-018d). The drawer button handler also invokes `useConversationStore.getState().clearAll()` to empty the in-memory store alongside this call.
+- Used by the "Clear all" button in the Transcript panel header (FR-018d). The button handler also invokes `useConversationStore.getState().clearAll()` to empty the in-memory store alongside this call.
 
 ### Trigger-path matrix
 

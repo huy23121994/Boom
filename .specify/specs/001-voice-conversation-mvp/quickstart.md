@@ -45,9 +45,9 @@ npm test         # Vitest (after Vitest is added in tasks)
 4. Bubble transitions: `listening → thinking → speaking → listening`. The first audio of the AI reply should begin within ~3 s of you finishing speaking. (SC-001)
 5. Speak a clear ESL error: "I am go to store yesterday." Verify the AI's reply weaves a correction (e.g., uses "I went to the store yesterday" in its own sentence) without opening any separate panel. (SC-005)
 6. Tap the bubble while it is `listening` and speaking — it should immediately move to `thinking`. (SC-006, FR-008)
-7. Open settings (top-right), toggle "Save conversations to this device" ON. Reload the tab. Prior turns should reappear. (SC-003)
-8. Toggle back OFF. Reload. Transcript should be empty. (SC-002)
-9. Press "Clear all history" with the toggle in either state. Transcript empties; reload again confirms nothing comes back. (FR-018d)
+7. Tap the top-left toggle to open the Transcript panel. In the panel header, toggle "Save to this device" ON. Reload the tab. Prior turns should reappear. (SC-003)
+8. Open the Transcript panel again; toggle back OFF. Reload. Transcript should be empty. (SC-002)
+9. Open the Transcript panel; press "Clear all" with the toggle in either state. Transcript empties; reload again confirms nothing comes back. (FR-018d)
 
 If any of those fails, do not advance to `/speckit-tasks` follow-on work without a plan revision.
 

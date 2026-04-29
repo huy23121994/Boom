@@ -18,7 +18,7 @@ The architectural keystone is **streaming + sentence-chunked TTS**: it is the on
 **Target Platform**: Modern evergreen browsers — iOS Safari (PWA), desktop Chrome/Safari/Firefox. Background-audio support is explicitly out of scope (spec). PWA installable via "Add to Home Screen" per constitution.
 **Project Type**: Single-page web application; no backend in this feature beyond the locked AI inference proxy.
 **Performance Goals**: Median end-to-end turn latency ≤ 3000 ms (SC-001 / §IV). Budget split: STT ≤ 800 ms, LLM first sentence ≤ 1500 ms, TTS first audio chunk ≤ 700 ms — total 3000 ms with **0 ms theoretical margin**, so streaming + sentence-chunked TTS is mandatory (LLM continues generating while TTS plays the first sentence, recovering the margin in practice).
-**Constraints**: Browser-native STT (`webkitSpeechRecognition`) and TTS (`SpeechSynthesis`) only (§VI). No conversation data uploaded anywhere except in flight to the AI proxy (FR-024). No persistence by default (FR-017). No barge-in (FR-007). Bundle should remain small enough for snappy first-paint over typical home connections; the ~1 MB vad-web onnx model is lazy-loaded after first user interaction and precached by the service worker thereafter.
+**Constraints**: Browser-native STT (`webkitSpeechRecognition`) and TTS (`SpeechSynthesis`) only (§VI). No conversation data uploaded anywhere except in flight to the AI proxy (FR-024). No persistence by default (FR-017). No barge-in (FR-007). Bundle should remain small enough for snappy first-paint over typical home connections; the energy-based VAD (research §5, amended 2026-04-28) carries zero external network resources — no large ONNX model download.
 **Scale/Scope**: Single-user, single-tab, single-screen feature. Conversation history capped functionally at the most-recent ~10 turns sent to the LLM (assumption from spec); local transcript storage is unbounded but realistically small (text-only).
 
 ## Constitution Check
@@ -52,9 +52,8 @@ Each FR is owned by **exactly one** module. Reviewer-acceptance criterion #1.
 | `src/state/conversation.ts` (Zustand store) | FR-002, FR-014, FR-015, FR-016 |
 | `src/hooks/useConversationLoop.ts` | FR-004, FR-005, FR-006, FR-007, **FR-009** (turn-end policy: VAD-default + tap-override + 90 s max-turn cap per research §15), FR-020, FR-021, FR-027 |
 | `src/components/Bubble.tsx` | FR-001, FR-002 (visual), FR-008 |
-| `src/components/Transcript.tsx` | FR-014/FR-015/FR-016 (rendering only — invariant lives in state module) |
-| `src/components/SettingsDrawer.tsx` | FR-018, FR-018a |
-| `src/components/ThemeToggle.tsx` | *(no exclusive FR — UI affordance for the theme slice in the Zustand store; rendered inside SettingsDrawer)* |
+| `src/components/Transcript.tsx` | FR-014/FR-015/FR-016 (rendering only — invariant lives in state module); FR-018, FR-018a (persistence controls in panel header — amended 2026-04-29) |
+| `src/components/ThemeToggle.tsx` | *(no exclusive FR — binary light↔dark toggle; fixed-position button top-right; amended 2026-04-29)* |
 | `src/components/MicPermissionError.tsx` | FR-022 |
 | `src/App.tsx` | FR-023, FR-025, FR-012 (UI absence enforced by composition) |
 
@@ -122,9 +121,9 @@ src/
 ├── index.css                     # already present; bubble keyframes + dark-class root tokens
 ├── components/
 │   ├── Bubble.tsx                # FR-001/002/008 (view)
-│   ├── Transcript.tsx            # FR-014/015/016 (view)
-│   ├── SettingsDrawer.tsx        # FR-018, FR-018a + ThemeToggle (sub-control inside the drawer)
-│   ├── ThemeToggle.tsx           # cycles theme: light → dark → system; consumes Zustand store
+│   ├── Transcript.tsx            # FR-014/015/016 (view); FR-018/018a (persistence controls in header)
+│   ├── TranscriptToggle.tsx      # fixed top-left button that opens/closes Transcript panel
+│   ├── ThemeToggle.tsx           # binary light↔dark toggle; fixed top-right button
 │   └── MicPermissionError.tsx    # FR-022
 ├── hooks/
 │   └── useConversationLoop.ts    # orchestrator (consumes the Zustand store via selectors)
@@ -132,7 +131,7 @@ src/
 │   ├── ai.ts                     # streaming chat completions
 │   ├── stt.ts                    # Web Speech API wrapper
 │   ├── tts.ts                    # SpeechSynthesis wrapper + sentence chunker
-│   ├── vad.ts                    # @ricky0123/vad-web wrapper, lazy load
+│   ├── vad.ts                    # energy-threshold VAD over AudioContext.AnalyserNode (amended §5)
 │   ├── storage.ts                # localStorage adapter, no-ops on OFF
 │   └── theme.ts                  # applyTheme(mode) — toggles `dark` on <html>; resolves 'system'
 ├── state/
@@ -140,8 +139,12 @@ src/
 └── types/                        # shared d.ts (e.g., webkitSpeechRecognition shim)
 
 public/
-├── icons.svg                     # source for 192/512 PNG icons
-└── (generated icons + manifest at build time by vite-plugin-pwa)
+├── icon.svg                      # orb icon (SVG source, any size)
+├── icon-maskable.svg             # maskable orb icon (SVG, safe-zone padded)
+├── icons/
+│   ├── 192.png                   # generated from icon.svg via sips (192×192)
+│   └── 512.png                   # generated from icon.svg via sips (512×512)
+└── (manifest emitted at build time by vite-plugin-pwa)
 
 uno.config.ts                     # UnoCSS preset-wind3 + shortcuts (text-default, bg-default, …)
 vite.config.ts                    # path alias @/, vite-plugin-pwa, UnoCSS plugin
@@ -163,7 +166,7 @@ tsconfig.app.json                 # path alias @/
 
 ### Phase 0 — Outline & Research → [research.md](./research.md)
 
-Resolves all remaining uncertainty around the locked tech stack: streaming SSE format, sentence-chunking heuristic, iOS Safari STT recovery, vad-web lazy loading, voice selection for SpeechSynthesis, vite-plugin-pwa runtime caching strategy, and the deferred Whisper-via-proxy contingency.
+Resolves all remaining uncertainty around the locked tech stack: streaming SSE format, sentence-chunking heuristic, iOS Safari STT recovery, energy-threshold VAD (replaces vad-web per §5 amendment), voice selection for SpeechSynthesis, vite-plugin-pwa runtime caching strategy, and the deferred Whisper-via-proxy contingency.
 
 ### Phase 1 — Design & Contracts → [data-model.md](./data-model.md), [contracts/](./contracts/), [quickstart.md](./quickstart.md)
 

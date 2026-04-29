@@ -108,7 +108,7 @@ Two keys under the `boom:` namespace:
 | `boom:prefs` | always (whenever the toggle or theme is touched) | `{ persistEnabled: boolean, theme: 'light' \| 'dark' \| 'system', version: 1 }` |
 | `boom:transcript` | only when `prefs.persistEnabled === true` | `{ turns: ConversationTurn[], version: 1 }` |
 
-Both blobs are JSON. No other keys are written by this feature. Clearing happens via `storage.clearAll()` removing both keys; the in-memory state is reset by a separate `clearAll()` action call on the Zustand store (`useConversationStore.getState().clearAll()`) that the SettingsDrawer fires alongside the storage call.
+Both blobs are JSON. No other keys are written by this feature. Clearing happens via `storage.clearAll()` removing both keys; the in-memory state is reset by a separate `clearAll()` action call on the Zustand store (`useConversationStore.getState().clearAll()`) that the "Clear all" button in the Transcript panel header fires alongside the storage call.
 
 ## Store action surface (Zustand)
 
@@ -120,6 +120,6 @@ The Zustand store in `src/state/conversation.ts` exposes a closed set of setters
 | `setBubble` | `BubbleState` | Pure state transition; orchestrator-only. |
 | `appendTurn` | `ConversationTurn` | Push to `turns`; persist iff toggle ON (via subscriber → `storage.saveTranscript`). |
 | `setError` | `Conversation['activeError']` | Set or clear the transient error. |
-| `clearAll` | `void` | Empty `turns`; reset prefs to default `{ persistEnabled: false, theme: 'system', version: 1 }`. Storage adapter call (`storage.clearAll()` + `savePrefs(default)`) is performed by the call site (the SettingsDrawer button handler) alongside this store action. |
+| `clearAll` | `void` | Empty `turns`; reset prefs to default `{ persistEnabled: false, theme: 'system', version: 1 }`. Storage adapter call (`storage.clearAll()` + `savePrefs(default)`) is performed by the call site (the "Clear all" button in the Transcript panel header) alongside this store action. |
 | `togglePersist` | `boolean` | Update `prefs.persistEnabled`. When going `true → false`, the call site calls `storage.clearTranscript()` and then `storage.savePrefs(newPrefs)`. When going `false → true`, the call site calls `storage.savePrefs(newPrefs)` then `storage.saveTranscript(turns, newPrefs)`. |
 | `setTheme` | `'light' \| 'dark' \| 'system'` | Update `prefs.theme`. The store's subscriber calls `applyTheme(theme)` from `@/lib/theme` and then `storage.savePrefs(newPrefs)`. No effect on `boom:transcript`. |
