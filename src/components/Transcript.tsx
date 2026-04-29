@@ -48,13 +48,13 @@ export const Transcript: FC<TranscriptProps> = ({ open, onClose }) => {
 
   return (
     <aside
-      className={`transcript ${open ? 'is-open' : ''}`}
+      className={`transcript bg-elevated border border-default ${open ? 'is-open' : ''}`}
       aria-hidden={!open}
       role="complementary"
       aria-label="Conversation transcript"
     >
-      <header className="transcript-head">
-        <span className="transcript-label">Conversation</span>
+      <header className="transcript-head border-b border-default">
+        <span className="transcript-label text-muted">Conversation</span>
         <button
           type="button"
           aria-label="Close transcript"
@@ -72,7 +72,7 @@ export const Transcript: FC<TranscriptProps> = ({ open, onClose }) => {
           </svg>
         </button>
       </header>
-      <div className="transcript-toolbar">
+      <div className="transcript-toolbar border-b border-default">
         <button
           type="button"
           role="switch"
@@ -96,7 +96,7 @@ export const Transcript: FC<TranscriptProps> = ({ open, onClose }) => {
       </div>
       <div className="transcript-list" ref={listRef}>
         {turns.length === 0 ? (
-          <p className="transcript-empty">Your conversation will appear here.</p>
+          <p className="transcript-empty text-muted">Your conversation will appear here.</p>
         ) : (
           turns.map((turn) => <Turn key={turn.id} turn={turn} now={now} />)
         )}
@@ -112,9 +112,15 @@ const Turn: FC<{ turn: ConversationTurn; now: number }> = ({ turn, now }) => {
         <span className="turn-speaker">
           {turn.speaker === 'learner' ? 'You' : 'Tutor'}
         </span>
-        <span className="turn-time">{formatRelative(turn.timestamp, now)}</span>
+        <span className="turn-time text-muted">{formatRelative(turn.timestamp, now)}</span>
       </div>
-      <p className="turn-text">{turn.text}</p>
+      {turn.error ? (
+        <p className="turn-text text-muted" aria-label="Reply unavailable">
+          <span aria-hidden="true">⚠</span> Reply unavailable
+        </p>
+      ) : (
+        <p className="turn-text text-default">{turn.text}</p>
+      )}
     </article>
   )
 }

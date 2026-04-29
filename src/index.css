@@ -516,14 +516,10 @@ body {
   max-width: calc(100vw - 24px);
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(20, 22, 35, 0.08);
   border-radius: 18px;
   box-shadow:
     0 16px 36px -16px rgba(0, 0, 0, 0.18),
     0 4px 12px -2px rgba(0, 0, 0, 0.06);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  backdrop-filter: blur(20px) saturate(140%);
   overflow: hidden;
   transform: translateX(calc(-100% - 24px));
   opacity: 0;
@@ -537,10 +533,6 @@ body {
   opacity: 1;
   pointer-events: auto;
 }
-.dark .transcript {
-  background: rgba(20, 22, 32, 0.92);
-  border-color: rgba(255, 255, 255, 0.08);
-}
 
 .transcript-head {
   display: flex;
@@ -548,10 +540,6 @@ body {
   justify-content: space-between;
   padding: 16px 18px 12px;
   padding-left: 76px;
-  border-bottom: 1px solid rgba(20, 22, 35, 0.06);
-}
-.dark .transcript-head {
-  border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
 .transcript-label {
@@ -559,10 +547,6 @@ body {
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgb(100 105 125);
-}
-.dark .transcript-label {
-  color: rgb(170 175 190);
 }
 
 .transcript-close {
@@ -602,10 +586,6 @@ body {
   justify-content: space-between;
   gap: 10px;
   padding: 10px 18px 12px;
-  border-bottom: 1px solid rgba(20, 22, 35, 0.05);
-}
-.dark .transcript-toolbar {
-  border-bottom-color: rgba(255, 255, 255, 0.05);
 }
 
 .persist-toggle {
@@ -718,11 +698,7 @@ body {
   margin: 32px 0;
   text-align: center;
   font-size: 14px;
-  color: rgb(140 145 160);
   letter-spacing: 0.02em;
-}
-.dark .transcript-empty {
-  color: rgb(150 155 175);
 }
 
 .turn {
@@ -765,22 +741,14 @@ body {
   font-size: 11px;
   font-feature-settings: 'tnum';
   font-variant-numeric: tabular-nums;
-  color: rgb(150 155 170);
   letter-spacing: 0.04em;
-}
-.dark .turn-time {
-  color: rgb(135 140 158);
 }
 
 .turn-text {
   margin: 0;
   font-size: 15px;
   line-height: 1.55;
-  color: rgb(35 40 55);
   letter-spacing: -0.005em;
-}
-.dark .turn-text {
-  color: rgb(225 230 240);
 }
 
 /* ============================================================ *

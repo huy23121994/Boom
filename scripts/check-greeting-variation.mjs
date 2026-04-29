@@ -23,7 +23,11 @@ function loadEnv() {
       const text = readFileSync(resolve(process.cwd(), name), 'utf8')
       for (const line of text.split('\n')) {
         const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.+)$/)
-        if (m) process.env[m[1]] ??= m[2].trim().replace(/^['"]|['"]$/g, '')
+        if (m) {
+          // strip inline comments before trimming, then strip surrounding quotes
+          const val = m[2].replace(/\s*#.*$/, '').trim().replace(/^['"]|['"]$/g, '')
+          process.env[m[1]] ??= val
+        }
       }
       break
     } catch {
@@ -59,7 +63,8 @@ If the learner appears to start a new topic, follow the new topic. If they are s
 If you are sent only this system prompt with no prior turns, that means a fresh session is starting — produce a brief, varied conversational opener: ONE short greeting followed by ONE light open question. Hard cap: ≤ 18 words total. Vary the opener across sessions; do not repeat the same template. Never introduce yourself, never list what you can do, never say "I am here to help" — just dive in like a friend.`
 
 // ---------------------------------------------------------------------------
-// Fetch one greeting (non-streaming for simplicity)
+// Fetch one greeting via streaming SSE — matches the app's ai.ts request shape
+// contracts/ai-proxy.md: stream:true is mandatory; no extra sampling params.
 // ---------------------------------------------------------------------------
 async function fetchGreeting() {
   const res = await fetch(`${BASE_URL}/chat/completions`, {
@@ -70,9 +75,8 @@ async function fetchGreeting() {
     },
     body: JSON.stringify({
       model: MODEL,
+      stream: true,
       messages: [{ role: 'system', content: SYSTEM_PROMPT }],
-      max_tokens: 60,
-      temperature: 1.0,
     }),
   })
 
@@ -81,8 +85,22 @@ async function fetchGreeting() {
     throw new Error(`HTTP ${res.status}: ${body.slice(0, 200)}`)
   }
 
-  const json = await res.json()
-  return json.choices?.[0]?.message?.content?.trim() ?? ''
+  // Parse SSE stream: collect delta.content fragments until [DONE]
+  const text = await res.text()
+  let content = ''
+  for (const line of text.split('\n')) {
+    if (!line.startsWith('data: ')) continue
+    const data = line.slice(6).trim()
+    if (data === '[DONE]') break
+    try {
+      const json = JSON.parse(data)
+      const delta = json.choices?.[0]?.delta?.content
+      if (delta) content += delta
+    } catch {
+      // ignore malformed SSE chunk
+    }
+  }
+  return content.trim()
 }
 
 // ---------------------------------------------------------------------------
@@ -102,7 +120,7 @@ for (let i = 1; i <= TOTAL; i++) {
     console.log(JSON.stringify(g))
   } catch (err) {
     console.error(`ERROR: ${err.message}`)
-    greetings.push(`__ERROR_${i}__`)
+    process.exit(1)
   }
 }
 

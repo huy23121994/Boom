@@ -51,4 +51,28 @@ describe('ThemeToggle', () => {
     await userEvent.click(screen.getByRole('button'))
     expect(useConversationStore.getState().prefs.theme).toBe('light')
   })
+
+  it('renders correctly when store has theme: system — resolves via matchMedia', () => {
+    // Mock matchMedia to report system preference as dark
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: (query: string) => ({
+        matches: query === '(prefers-color-scheme: dark)',
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      }),
+    })
+    useConversationStore.setState({
+      prefs: { persistEnabled: false, theme: 'system', version: 1 },
+    })
+    render(<ThemeToggle />)
+    // system resolves to dark via matchMedia → button shows "Switch to light"
+    expect(screen.getByRole('button')).toHaveAttribute(
+      'aria-label',
+      'Switch to light theme',
+    )
+  })
 })

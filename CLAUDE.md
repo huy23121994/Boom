@@ -8,7 +8,7 @@ iPhone via "Add to Home Screen" without a Mac/Xcode.
 
 <!-- SPECKIT START -->
 Active feature: **001 Voice-First Conversation MVP**.
-Read these in order before touching code:
+Read ONLY 1, 2 for the minimum required, other files (3, 4, 5, 6) ONLY when directly relevant:
 1. `.specify/specs/001-voice-conversation-mvp/spec.md` — WHAT/WHY (frozen, reviewer-approved 2026-04-28)
 2. `.specify/specs/001-voice-conversation-mvp/plan.md` — HOW: tech stack, module ownership, latency budget, SC verification matrix
 3. `.specify/specs/001-voice-conversation-mvp/research.md` — Phase 0 decisions (transport, VAD, TTS, recovery, etc.)
@@ -40,14 +40,21 @@ For any change request:
    - If you touched `.specify/**/*.md` → invoke the **spec-reviewer** agent.
    - If you touched `src/**`, `vite.config.ts`, or `package.json` → invoke
      the **code-reviewer** agent.
+   - Run reviewers for major changes only. Skip for small fixes (<50 LOC, no architecture impact).
    - If reviewer returns `REJECTED`, fix the listed issues and re-invoke.
    - **Loop until both relevant reviewers return `APPROVED`.** Do not
      declare a task done before then.
 5. **Update task status in `tasks.md`** (mark the task as completed) only
    after the reviewer pass.
 
-Do not skip steps "to save time." Skipping is the failure mode this project
-exists to prevent.
+### Fast path (allowed)
+
+For small changes (bug fixes, UI tweaks, <1 file):
+- Skip spec/plan/tasks
+- Implement directly
+- Optionally run code-reviewer once
+
+Use judgment. Do not over-spec trivial work.
 
 ### Spec-Kit slash commands available
 
