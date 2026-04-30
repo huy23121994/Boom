@@ -7,9 +7,17 @@ import {
   savePrefs,
 } from '@/lib/storage'
 
-export type BubbleState = 'speaking' | 'listening' | 'thinking'
+export type BubbleState = 'speaking' | 'listening' | 'thinking' | 'processing'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
+
+export type SpeechRate = 'slow' | 'normal' | 'fast'
+
+export const SPEECH_RATE_VALUES: Record<SpeechRate, number> = {
+  slow: 0.78,
+  normal: 1.0,
+  fast: 1.2,
+}
 
 export type ActiveError = 'mic-denied' | 'transport' | 'provider' | undefined
 
@@ -24,6 +32,7 @@ export interface ConversationTurn {
 export interface PersistencePreference {
   persistEnabled: boolean
   theme: ThemeMode
+  speechRate: SpeechRate
   version: number
 }
 
@@ -31,6 +40,8 @@ export interface Conversation {
   turns: ConversationTurn[]
   bubbleState: BubbleState
   activeError: ActiveError
+  currentSubtitle: string
+  interimTranscript: string
 }
 
 export interface ConversationStore extends Conversation {
@@ -45,16 +56,21 @@ export interface ConversationStore extends Conversation {
   clearAll: () => void
   togglePersist: (next: boolean) => void
   setTheme: (mode: ThemeMode) => void
+  setSpeechRate: (rate: SpeechRate) => void
+  setSubtitle: (text: string) => void
+  setInterimTranscript: (text: string) => void
 }
 
 const DEFAULT_PREFS: PersistencePreference = {
   persistEnabled: false,
   theme: 'system',
+  speechRate: 'normal',
   version: 1,
 }
 
 const VALID_TRANSITIONS: Record<BubbleState, ReadonlyArray<BubbleState>> = {
-  listening: ['thinking'],
+  listening: ['processing', 'thinking'],
+  processing: ['thinking', 'listening'],
   thinking: ['speaking', 'listening'],
   speaking: ['listening'],
 }
@@ -68,6 +84,8 @@ export const useConversationStore = create<ConversationStore>()((set) => ({
   turns: [],
   bubbleState: 'thinking',
   activeError: undefined,
+  currentSubtitle: '',
+  interimTranscript: '',
   prefs: { ...DEFAULT_PREFS },
 
   boot: ({ persistedTurns, prefs }) => {
@@ -108,6 +126,8 @@ export const useConversationStore = create<ConversationStore>()((set) => ({
         turns: [],
         prefs: newPrefs,
         activeError: undefined,
+        currentSubtitle: '',
+        interimTranscript: '',
       }
     })
   },
@@ -133,6 +153,22 @@ export const useConversationStore = create<ConversationStore>()((set) => ({
       return { prefs: newPrefs }
     })
   },
+
+  setSpeechRate: (rate) => {
+    set((s) => {
+      const newPrefs: PersistencePreference = { ...s.prefs, speechRate: rate }
+      savePrefs(newPrefs)
+      return { prefs: newPrefs }
+    })
+  },
+
+  setSubtitle: (text) => {
+    set({ currentSubtitle: text })
+  },
+
+  setInterimTranscript: (text) => {
+    set({ interimTranscript: text })
+  },
 }))
 
 export const useTurns = (): ConversationTurn[] =>
@@ -145,3 +181,7 @@ export const useTheme = (): ThemeMode =>
   useConversationStore((s) => s.prefs.theme)
 export const useError = (): ActiveError =>
   useConversationStore((s) => s.activeError)
+export const useSubtitle = (): string =>
+  useConversationStore((s) => s.currentSubtitle)
+export const useInterimTranscript = (): string =>
+  useConversationStore((s) => s.interimTranscript)

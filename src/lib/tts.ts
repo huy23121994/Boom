@@ -20,11 +20,11 @@ function tryFillCacheSync(): boolean {
   return true
 }
 
-function speakWithVoice(text: string): Promise<void> {
+function speakWithVoice(text: string, rate: number): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const utter = new SpeechSynthesisUtterance(text)
     if (cachedVoice) utter.voice = cachedVoice
-    utter.rate = 1.0
+    utter.rate = rate
     utter.pitch = 1.0
     utter.volume = 1.0
     utter.onend = () => resolve()
@@ -35,15 +35,15 @@ function speakWithVoice(text: string): Promise<void> {
   })
 }
 
-export function speak(text: string): Promise<void> {
-  if (tryFillCacheSync()) return speakWithVoice(text)
+export function speak(text: string, rate = 1.0): Promise<void> {
+  if (tryFillCacheSync()) return speakWithVoice(text, rate)
   return new Promise<void>((resolve, reject) => {
     const onChange = (): void => {
       const voices = window.speechSynthesis.getVoices()
       cachedVoice = selectVoice(voices)
       cacheReady = true
       window.speechSynthesis.removeEventListener('voiceschanged', onChange)
-      speakWithVoice(text).then(resolve, reject)
+      speakWithVoice(text, rate).then(resolve, reject)
     }
     window.speechSynthesis.addEventListener('voiceschanged', onChange)
   })
@@ -51,9 +51,4 @@ export function speak(text: string): Promise<void> {
 
 export function cancel(): void {
   window.speechSynthesis.cancel()
-}
-
-export function _resetVoiceCacheForTesting(): void {
-  cachedVoice = null
-  cacheReady = false
 }

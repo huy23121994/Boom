@@ -3,7 +3,7 @@ import { useConversationStore, useTheme } from '@/state/conversation'
 import { resolveTheme } from '@/lib/theme'
 
 const SunIcon: FC = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
     <circle cx="12" cy="12" r="4.2" fill="currentColor" />
     <g stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
       <path d="M12 3v2.4" />
@@ -19,7 +19,7 @@ const SunIcon: FC = () => (
 )
 
 const MoonIcon: FC = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
     <path
       d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11z"
       fill="currentColor"

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Bubble } from '@/components/Bubble'
 import { MicPermissionError } from '@/components/MicPermissionError'
+import { SpeedControl } from '@/components/SpeedControl'
+import { Subtitle } from '@/components/Subtitle'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Transcript } from '@/components/Transcript'
 import { TranscriptToggle } from '@/components/TranscriptToggle'
@@ -45,19 +47,24 @@ function App() {
       <div className="bubble-area">
         <Bubble onTap={handleBubbleTap} started={started} />
         {started && (
-          <button
-            type="button"
-            onClick={handleStop}
-            className="stop-button"
-            aria-label="End conversation"
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-              <rect x="7" y="7" width="10" height="10" rx="1.6" fill="currentColor" />
-            </svg>
-            <span>End conversation</span>
-          </button>
+          <div className="controls-row">
+            <SpeedControl />
+            <button
+              type="button"
+              onClick={handleStop}
+              className="stop-button"
+              aria-label="End conversation"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <rect x="7" y="7" width="10" height="10" rx="1.6" fill="currentColor" />
+              </svg>
+              <span>End</span>
+            </button>
+          </div>
         )}
       </div>
+
+      <Subtitle />
 
       <Transcript open={transcriptOpen} onClose={() => setTranscriptOpen(false)} />
       <MicPermissionError

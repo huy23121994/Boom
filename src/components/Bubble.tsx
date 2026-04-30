@@ -10,13 +10,15 @@ const STATE_LABEL = {
   speaking: 'Tutor is speaking',
   listening: 'Listening — speak when ready',
   thinking: 'Thinking',
+  processing: 'Processing',
 } as const
 
 const STATUS_LINES = [
   { id: 'idle' as const, text: 'Tap to start' },
   { id: 'speaking' as const, text: 'Tutor is speaking' },
   { id: 'listening' as const, text: 'Listening — speak when ready' },
-  { id: 'thinking' as const, text: 'Thinking' },
+  { id: 'processing' as const, text: 'Processing your speech...' },
+  { id: 'thinking' as const, text: 'Thinking...' },
 ]
 
 export const Bubble: FC<BubbleProps> = ({ onTap, started }) => {
@@ -61,8 +63,8 @@ export const Bubble: FC<BubbleProps> = ({ onTap, started }) => {
             <svg
               className="bubble-play"
               viewBox="0 0 24 24"
-              width="30"
-              height="30"
+              width="32"
+              height="32"
               aria-hidden="true"
             >
               <path d="M9 6.2v11.6L18.4 12z" fill="currentColor" />

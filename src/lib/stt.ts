@@ -1,5 +1,6 @@
 export interface STTCallbacks {
   onFinalTranscript: (text: string) => void
+  onInterimTranscript?: (text: string) => void
   onError: (error: Error) => void
 }
 
@@ -60,11 +61,22 @@ export function startRecognition(cb: STTCallbacks): STTHandle {
     recognition.continuous = false
 
     recognition.onresult = (event) => {
+      let interim = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i]
         if (result.isFinal) {
-          finalText += result[0].transcript
+          const chunk = result[0].transcript
+          if (finalText.length > 0 && !finalText.endsWith(' ') && !chunk.startsWith(' ')) {
+            finalText += ' '
+          }
+          finalText += chunk
+        } else {
+          interim += result[0].transcript
         }
+      }
+      if (interim.length > 0) {
+        const separator = finalText.length > 0 && !finalText.endsWith(' ') && !interim.startsWith(' ') ? ' ' : ''
+        cb.onInterimTranscript?.(finalText + separator + interim)
       }
     }
 

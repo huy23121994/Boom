@@ -1,6 +1,7 @@
 import type {
   ConversationTurn,
   PersistencePreference,
+  SpeechRate,
   ThemeMode,
 } from '@/state/conversation'
 
@@ -11,11 +12,16 @@ const SCHEMA_VERSION = 1
 const DEFAULT_PREFS: PersistencePreference = {
   persistEnabled: false,
   theme: 'system',
+  speechRate: 'normal',
   version: SCHEMA_VERSION,
 }
 
 function isThemeMode(v: unknown): v is ThemeMode {
   return v === 'light' || v === 'dark' || v === 'system'
+}
+
+function isSpeechRate(v: unknown): v is SpeechRate {
+  return v === 'slow' || v === 'normal' || v === 'fast'
 }
 
 let prefsQuotaWarned = false
@@ -33,10 +39,11 @@ export function loadPrefs(): PersistencePreference {
     ) {
       return { ...DEFAULT_PREFS }
     }
-    const obj = parsed as { persistEnabled?: unknown; theme?: unknown }
+    const obj = parsed as { persistEnabled?: unknown; theme?: unknown; speechRate?: unknown }
     return {
       persistEnabled: typeof obj.persistEnabled === 'boolean' ? obj.persistEnabled : false,
       theme: isThemeMode(obj.theme) ? obj.theme : 'system',
+      speechRate: isSpeechRate(obj.speechRate) ? obj.speechRate : 'normal',
       version: SCHEMA_VERSION,
     }
   } catch {
@@ -103,9 +110,4 @@ export function clearPrefs(): void {
 export function clearAll(): void {
   clearTranscript()
   clearPrefs()
-}
-
-export function _resetQuotaWarningsForTesting(): void {
-  prefsQuotaWarned = false
-  transcriptQuotaWarned = false
 }

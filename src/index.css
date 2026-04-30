@@ -1,3 +1,7 @@
+/* ============================================================ *
+ *  CSS CUSTOM PROPERTIES — animated bubble colors
+ * ============================================================ */
+
 @property --core-from {
   syntax: '<color>';
   inherits: true;
@@ -24,25 +28,52 @@
   initial-value: hsla(220 25% 65% / 0.4);
 }
 
+/* ============================================================ *
+ *  ROOT TOKENS
+ * ============================================================ */
+
 :root {
-  --core-size: 184px;
-  --orbit-1-size: 248px;
-  --orbit-2-size: 300px;
-  --orbit-3-size: 352px;
-  --transcript-width: 380px;
+  --core-size: 172px;
+  --orbit-1-size: 232px;
+  --orbit-2-size: 280px;
+  --orbit-3-size: 328px;
+  --transcript-width: 400px;
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Light theme colors */
+  --bg-primary: #f5f3f0;
+  --bg-elevated: #ffffff;
+  --text-primary: #1a1d26;
+  --text-secondary: #6b7084;
+  --border-color: rgba(20, 22, 35, 0.08);
+  --accent: #6366f1;
+
+  color-scheme: light dark;
+}
+
+.dark {
+  --bg-primary: #0c0d12;
+  --bg-elevated: #16171f;
+  --text-primary: #e8e9ef;
+  --text-secondary: #8b8fa4;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --accent: #818cf8;
 }
 
 @media (max-width: 640px) {
   :root {
-    --core-size: 148px;
-    --orbit-1-size: 204px;
-    --orbit-2-size: 248px;
-    --orbit-3-size: 292px;
+    --core-size: 140px;
+    --orbit-1-size: 192px;
+    --orbit-2-size: 236px;
+    --orbit-3-size: 280px;
     --transcript-width: calc(100vw - 24px);
   }
 }
+
+/* ============================================================ *
+ *  BASE RESET
+ * ============================================================ */
 
 html,
 body,
@@ -58,22 +89,30 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background 300ms ease, color 300ms ease;
 }
+
+/* ============================================================ *
+ *  APP SHELL
+ * ============================================================ */
 
 .app-shell {
   position: relative;
-  min-height: 100svh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  background: var(--bg-primary);
 }
 
 .bubble-area {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 28px;
 }
 
 .sr-only {
@@ -89,14 +128,14 @@ body {
 }
 
 /* ============================================================ *
- *   BUBBLE
+ *  BUBBLE
  * ============================================================ */
 
 .bubble-shell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 32px;
+  gap: 28px;
 }
 
 .bubble-stage {
@@ -109,42 +148,51 @@ body {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   transition:
-    --core-from 700ms var(--ease-out-quart),
-    --core-to 700ms var(--ease-out-quart),
-    --aura 700ms var(--ease-out-quart),
-    --satellite 700ms var(--ease-out-quart),
-    --ripple 700ms var(--ease-out-quart);
+    --core-from 600ms var(--ease-out-quart),
+    --core-to 600ms var(--ease-out-quart),
+    --aura 600ms var(--ease-out-quart),
+    --satellite 600ms var(--ease-out-quart),
+    --ripple 600ms var(--ease-out-quart);
 }
 
+/* State colors */
 .bubble-stage.is-idle {
   --core-from: hsl(220 18% 72%);
   --core-to: hsl(220 25% 48%);
-  --aura: hsla(220 30% 60% / 0.32);
-  --satellite: hsla(220 25% 65% / 0.6);
-  --ripple: hsla(220 25% 65% / 0.4);
+  --aura: hsla(220 30% 60% / 0.28);
+  --satellite: hsla(220 25% 65% / 0.55);
+  --ripple: hsla(220 25% 65% / 0.35);
 }
 .bubble-stage.is-speaking {
-  --core-from: hsl(28 92% 78%);
-  --core-to: hsl(12 80% 56%);
-  --aura: hsla(20 88% 64% / 0.5);
-  --satellite: hsla(20 80% 70% / 0.75);
-  --ripple: hsla(20 80% 65% / 0.55);
+  --core-from: hsl(28 90% 76%);
+  --core-to: hsl(12 78% 54%);
+  --aura: hsla(20 85% 62% / 0.45);
+  --satellite: hsla(20 78% 68% / 0.7);
+  --ripple: hsla(20 78% 63% / 0.5);
 }
 .bubble-stage.is-listening {
-  --core-from: hsl(165 70% 78%);
-  --core-to: hsl(190 75% 50%);
-  --aura: hsla(180 75% 60% / 0.5);
-  --satellite: hsla(180 70% 65% / 0.75);
-  --ripple: hsla(180 70% 60% / 0.55);
+  --core-from: hsl(165 68% 76%);
+  --core-to: hsl(190 72% 48%);
+  --aura: hsla(180 72% 58% / 0.45);
+  --satellite: hsla(180 68% 63% / 0.7);
+  --ripple: hsla(180 68% 58% / 0.5);
+}
+.bubble-stage.is-processing {
+  --core-from: hsl(42 88% 72%);
+  --core-to: hsl(32 80% 50%);
+  --aura: hsla(38 85% 58% / 0.45);
+  --satellite: hsla(38 78% 63% / 0.7);
+  --ripple: hsla(38 78% 58% / 0.5);
 }
 .bubble-stage.is-thinking {
-  --core-from: hsl(265 72% 80%);
-  --core-to: hsl(258 65% 55%);
-  --aura: hsla(262 75% 64% / 0.5);
-  --satellite: hsla(260 65% 70% / 0.75);
-  --ripple: hsla(260 65% 65% / 0.55);
+  --core-from: hsl(265 70% 78%);
+  --core-to: hsl(258 62% 53%);
+  --aura: hsla(262 72% 62% / 0.45);
+  --satellite: hsla(260 62% 68% / 0.7);
+  --ripple: hsla(260 62% 63% / 0.5);
 }
 
+/* Core button */
 .bubble-core {
   position: relative;
   z-index: 3;
@@ -161,78 +209,84 @@ body {
   background:
     radial-gradient(
       circle at 32% 26%,
-      hsla(0 0% 100% / 0.6) 0%,
-      hsla(0 0% 100% / 0) 38%
+      hsla(0 0% 100% / 0.55) 0%,
+      hsla(0 0% 100% / 0) 36%
     ),
     radial-gradient(circle at 50% 55%, var(--core-from) 0%, var(--core-to) 78%);
   box-shadow:
-    0 0 90px 6px var(--aura),
-    inset 0 -28px 44px rgba(0, 0, 0, 0.18),
-    inset 0 8px 22px rgba(255, 255, 255, 0.22),
-    0 28px 64px -16px rgba(0, 0, 0, 0.28);
+    0 0 80px 4px var(--aura),
+    inset 0 -24px 40px rgba(0, 0, 0, 0.16),
+    inset 0 6px 18px rgba(255, 255, 255, 0.2),
+    0 24px 56px -14px rgba(0, 0, 0, 0.25);
   transition:
-    background 700ms var(--ease-out-quart),
-    box-shadow 700ms var(--ease-out-quart),
-    transform 240ms var(--ease-spring);
+    background 600ms var(--ease-out-quart),
+    box-shadow 600ms var(--ease-out-quart),
+    transform 200ms var(--ease-spring);
 }
 
 .bubble-core:hover {
-  transform: scale(1.025);
+  transform: scale(1.03);
 }
 .bubble-core:active {
   transform: scale(0.97);
 }
 .bubble-core:focus-visible {
   box-shadow:
-    0 0 90px 6px var(--aura),
-    inset 0 -28px 44px rgba(0, 0, 0, 0.18),
-    inset 0 8px 22px rgba(255, 255, 255, 0.22),
-    0 28px 64px -16px rgba(0, 0, 0, 0.28),
-    0 0 0 4px hsla(0 0% 100% / 0.7),
-    0 0 0 6px var(--aura);
+    0 0 80px 4px var(--aura),
+    inset 0 -24px 40px rgba(0, 0, 0, 0.16),
+    inset 0 6px 18px rgba(255, 255, 255, 0.2),
+    0 24px 56px -14px rgba(0, 0, 0, 0.25),
+    0 0 0 3px hsla(0 0% 100% / 0.7),
+    0 0 0 5px var(--aura);
 }
 
 .bubble-play {
   display: block;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.18));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.16));
 }
 
+/* Listening: gentle breathe */
 .bubble-stage.is-listening .bubble-core {
   animation: bubble-breathe 3.6s ease-in-out infinite;
 }
 @keyframes bubble-breathe {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.04);
-  }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
 }
 
+/* Idle: slow pulse */
 .bubble-stage.is-idle .bubble-core {
   animation: bubble-idle-pulse 4.2s ease-in-out infinite;
 }
 @keyframes bubble-idle-pulse {
-  0%,
-  100% {
+  0%, 100% {
     transform: scale(1);
     box-shadow:
-      0 0 70px 0 var(--aura),
-      inset 0 -28px 44px rgba(0, 0, 0, 0.18),
-      inset 0 8px 22px rgba(255, 255, 255, 0.22),
-      0 28px 64px -16px rgba(0, 0, 0, 0.28);
+      0 0 60px 0 var(--aura),
+      inset 0 -24px 40px rgba(0, 0, 0, 0.16),
+      inset 0 6px 18px rgba(255, 255, 255, 0.2),
+      0 24px 56px -14px rgba(0, 0, 0, 0.25);
   }
   50% {
     transform: scale(1.015);
     box-shadow:
-      0 0 110px 8px var(--aura),
-      inset 0 -28px 44px rgba(0, 0, 0, 0.18),
-      inset 0 8px 22px rgba(255, 255, 255, 0.22),
-      0 28px 64px -16px rgba(0, 0, 0, 0.28);
+      0 0 100px 6px var(--aura),
+      inset 0 -24px 40px rgba(0, 0, 0, 0.16),
+      inset 0 6px 18px rgba(255, 255, 255, 0.2),
+      0 24px 56px -14px rgba(0, 0, 0, 0.25);
   }
 }
 
+/* Processing: quick pulse */
+.bubble-stage.is-processing .bubble-core {
+  animation: bubble-processing 1.2s ease-in-out infinite;
+}
+@keyframes bubble-processing {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+/* Ripples — active during speaking */
 .bubble-ripples {
   position: absolute;
   inset: 0;
@@ -254,31 +308,16 @@ body {
 .bubble-stage.is-speaking .ripple {
   animation: ripple-out 2.6s var(--ease-out-quart) infinite;
 }
-.bubble-stage.is-speaking .ripple-1 {
-  animation-delay: 0s;
-}
-.bubble-stage.is-speaking .ripple-2 {
-  animation-delay: 0.85s;
-}
-.bubble-stage.is-speaking .ripple-3 {
-  animation-delay: 1.7s;
-}
+.bubble-stage.is-speaking .ripple-1 { animation-delay: 0s; }
+.bubble-stage.is-speaking .ripple-2 { animation-delay: 0.85s; }
+.bubble-stage.is-speaking .ripple-3 { animation-delay: 1.7s; }
 @keyframes ripple-out {
-  0% {
-    transform: scale(0.78);
-    opacity: 0.55;
-    border-width: 1.5px;
-  }
-  60% {
-    opacity: 0.45;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 0;
-    border-width: 0.5px;
-  }
+  0% { transform: scale(0.78); opacity: 0.5; border-width: 1.5px; }
+  60% { opacity: 0.4; }
+  100% { transform: scale(2); opacity: 0; border-width: 0.5px; }
 }
 
+/* Orbits — active during thinking */
 .bubble-orbits {
   position: absolute;
   inset: 0;
@@ -292,71 +331,55 @@ body {
   position: absolute;
   border-radius: 50%;
   opacity: 0;
-  transition: opacity 600ms ease;
+  transition: opacity 500ms ease;
 }
-.orbit-1 {
-  width: var(--orbit-1-size);
-  height: var(--orbit-1-size);
-}
-.orbit-2 {
-  width: var(--orbit-2-size);
-  height: var(--orbit-2-size);
-}
-.orbit-3 {
-  width: var(--orbit-3-size);
-  height: var(--orbit-3-size);
-}
-.bubble-stage.is-thinking .orbit {
+.orbit-1 { width: var(--orbit-1-size); height: var(--orbit-1-size); }
+.orbit-2 { width: var(--orbit-2-size); height: var(--orbit-2-size); }
+.orbit-3 { width: var(--orbit-3-size); height: var(--orbit-3-size); }
+
+.bubble-stage.is-thinking .orbit,
+.bubble-stage.is-processing .orbit {
   opacity: 1;
 }
-.bubble-stage.is-thinking .orbit-1 {
-  animation: orbit-spin 6.5s linear infinite;
+.bubble-stage.is-thinking .orbit-1,
+.bubble-stage.is-processing .orbit-1 {
+  animation: orbit-spin 5s linear infinite;
 }
-.bubble-stage.is-thinking .orbit-2 {
-  animation: orbit-spin 9.2s linear infinite reverse;
+.bubble-stage.is-thinking .orbit-2,
+.bubble-stage.is-processing .orbit-2 {
+  animation: orbit-spin 7.5s linear infinite reverse;
 }
-.bubble-stage.is-thinking .orbit-3 {
-  animation: orbit-spin 13.5s linear infinite;
+.bubble-stage.is-thinking .orbit-3,
+.bubble-stage.is-processing .orbit-3 {
+  animation: orbit-spin 11s linear infinite;
 }
 @keyframes orbit-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .satellite {
   position: absolute;
   top: -4px;
   left: 50%;
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--satellite);
-  box-shadow: 0 0 14px 1px var(--satellite);
+  box-shadow: 0 0 12px 1px var(--satellite);
   transform: translateX(-50%);
-  transition: background 700ms var(--ease-out-quart);
+  transition: background 600ms var(--ease-out-quart);
 }
-.orbit-2 .satellite {
-  width: 6px;
-  height: 6px;
-  top: -3px;
-}
-.orbit-3 .satellite {
-  width: 4px;
-  height: 4px;
-  top: -2px;
-}
+.orbit-2 .satellite { width: 6px; height: 6px; top: -3px; }
+.orbit-3 .satellite { width: 4px; height: 4px; top: -2px; }
 
 /* ============================================================ *
- *   STATUS TEXT — bigger, more prominent
+ *  STATUS TEXT
  * ============================================================ */
 
 .status {
   position: relative;
-  height: 26px;
+  height: 28px;
   width: 320px;
   pointer-events: none;
   user-select: none;
@@ -365,19 +388,14 @@ body {
   position: absolute;
   inset: 0;
   text-align: center;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
-  letter-spacing: -0.005em;
-  color: rgb(40 45 60);
+  letter-spacing: -0.01em;
+  color: var(--text-secondary);
   white-space: nowrap;
   opacity: 0;
   transform: translateY(6px);
-  transition:
-    opacity 380ms ease,
-    transform 380ms ease;
-}
-.dark .status-line {
-  color: rgb(225 230 240);
+  transition: opacity 300ms ease, transform 300ms ease;
 }
 .status-line.is-active {
   opacity: 1;
@@ -385,91 +403,98 @@ body {
 }
 
 /* ============================================================ *
- *   STOP BUTTON — visible when conversation started
+ *  CONTROLS ROW — stop + speed
  * ============================================================ */
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
 .stop-button {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 22px;
+  gap: 8px;
+  padding: 10px 20px;
   border-radius: 999px;
-  border: 1px solid rgba(20, 22, 35, 0.14);
-  background: rgba(255, 255, 255, 0.7);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  backdrop-filter: blur(14px) saturate(140%);
-  color: rgb(60 65 80);
-  font-size: 15px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 14px;
   font-weight: 500;
-  letter-spacing: -0.005em;
   cursor: pointer;
-  transition:
-    background 200ms ease,
-    color 200ms ease,
-    transform 200ms var(--ease-spring),
-    border-color 200ms ease;
+  transition: background 200ms ease, color 200ms ease, transform 200ms var(--ease-spring), border-color 200ms ease;
 }
 .stop-button:hover {
-  background: rgba(255, 255, 255, 0.9);
-  color: rgb(180 35 35);
-  border-color: rgba(180, 35, 35, 0.3);
+  color: hsl(0 65% 50%);
+  border-color: hsla(0, 65%, 50%, 0.3);
   transform: translateY(-1px);
 }
 .stop-button:active {
   transform: translateY(0);
 }
 .stop-button:focus-visible {
-  outline: 2px solid rgba(180, 35, 35, 0.4);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-.dark .stop-button {
-  background: rgba(28, 30, 42, 0.65);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgb(210 215 230);
+
+.speed-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease, transform 200ms var(--ease-spring), border-color 200ms ease;
 }
-.dark .stop-button:hover {
-  background: rgba(40, 42, 56, 0.85);
-  color: rgb(255, 130, 130);
-  border-color: rgba(255, 130, 130, 0.4);
+.speed-control:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.speed-control:active {
+  transform: translateY(0);
+}
+.speed-control:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ============================================================ *
- *   ICON BUTTONS — Transcript toggle + Theme toggle (bigger)
+ *  ICON BUTTONS — top bar
  * ============================================================ */
 
 .transcript-toggle,
 .theme-toggle {
   position: fixed;
-  top: 18px;
+  top: 16px;
   z-index: 30;
   width: 44px;
   height: 44px;
-  border-radius: 14px;
-  border: 1px solid rgba(20, 22, 35, 0.10);
-  background: rgba(255, 255, 255, 0.78);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  backdrop-filter: blur(14px) saturate(140%);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: rgb(45 50 65);
-  transition:
-    background 200ms ease,
-    color 200ms ease,
-    transform 200ms var(--ease-spring),
-    border-color 200ms ease;
+  color: var(--text-secondary);
+  transition: background 200ms ease, color 200ms ease, transform 200ms var(--ease-spring), border-color 200ms ease;
 }
-.transcript-toggle {
-  left: 18px;
-}
-.theme-toggle {
-  right: 18px;
-}
+.transcript-toggle { left: 16px; }
+.theme-toggle { right: 16px; }
+
 .transcript-toggle:hover,
 .theme-toggle:hover {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-primary);
 }
 .transcript-toggle:active,
 .theme-toggle:active {
@@ -477,33 +502,69 @@ body {
 }
 .transcript-toggle:focus-visible,
 .theme-toggle:focus-visible {
-  outline: 2px solid rgba(80, 100, 220, 0.45);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 .transcript-toggle.is-on {
-  background: rgba(15, 18, 32, 0.95);
-  color: rgba(255, 255, 255, 0.96);
-  border-color: rgba(255, 255, 255, 0.06);
-}
-
-.dark .transcript-toggle,
-.dark .theme-toggle {
-  background: rgba(28, 30, 42, 0.7);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgb(210 215 230);
-}
-.dark .transcript-toggle:hover,
-.dark .theme-toggle:hover {
-  background: rgba(40, 42, 56, 0.9);
-}
-.dark .transcript-toggle.is-on {
-  background: rgba(255, 255, 255, 0.94);
-  color: rgb(15 18 32);
-  border-color: rgba(0, 0, 0, 0.06);
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border-color: transparent;
 }
 
 /* ============================================================ *
- *   TRANSCRIPT — Left sidebar
+ *  SUBTITLE BAR — bottom of screen
+ * ============================================================ */
+
+.subtitle-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  padding: 16px 24px 32px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 250ms ease, transform 250ms ease;
+}
+.subtitle-bar.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.subtitle-text {
+  display: inline-block;
+  max-width: 600px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 450;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+.subtitle-text.is-tutor {
+  background: rgba(0, 0, 0, 0.75);
+  color: rgba(255, 255, 255, 0.95);
+}
+.subtitle-text.is-user {
+  background: rgba(0, 0, 0, 0.55);
+  color: rgba(255, 255, 255, 0.85);
+  font-style: italic;
+}
+.dark .subtitle-text.is-tutor {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+}
+.dark .subtitle-text.is-user {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ============================================================ *
+ *  TRANSCRIPT — left sidebar
  * ============================================================ */
 
 .transcript {
@@ -516,16 +577,18 @@ body {
   max-width: calc(100vw - 24px);
   display: flex;
   flex-direction: column;
-  border-radius: 18px;
+  border-radius: 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
   box-shadow:
-    0 16px 36px -16px rgba(0, 0, 0, 0.18),
-    0 4px 12px -2px rgba(0, 0, 0, 0.06);
+    0 20px 40px -16px rgba(0, 0, 0, 0.15),
+    0 4px 12px -2px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   transform: translateX(calc(-100% - 24px));
   opacity: 0;
   transition:
-    transform 460ms cubic-bezier(0.32, 0.72, 0.18, 1),
-    opacity 280ms ease;
+    transform 400ms cubic-bezier(0.32, 0.72, 0.18, 1),
+    opacity 250ms ease;
   pointer-events: none;
 }
 .transcript.is-open {
@@ -538,61 +601,55 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 18px 12px;
+  padding: 18px 20px 14px;
   padding-left: 76px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .transcript-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  color: var(--text-secondary);
 }
 
 .transcript-close {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   border: 0;
   background: transparent;
-  color: rgb(100 105 125);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition:
-    background 160ms ease,
-    color 160ms ease;
+  transition: background 160ms ease, color 160ms ease;
 }
 .transcript-close:hover {
-  background: rgba(20, 22, 35, 0.06);
-  color: rgb(40 45 60);
-}
-.dark .transcript-close {
-  color: rgb(170 175 190);
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-primary);
 }
 .dark .transcript-close:hover {
   background: rgba(255, 255, 255, 0.06);
-  color: rgb(220 225 240);
 }
 
-/* ============================================================ *
- *   TRANSCRIPT TOOLBAR — persistence + clear
- * ============================================================ */
-
+/* Transcript toolbar */
 .transcript-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 18px 12px;
+  padding: 12px 20px 14px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .persist-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  padding: 4px 4px 4px 4px;
+  gap: 10px;
+  padding: 4px;
   border: 0;
   background: transparent;
   cursor: pointer;
@@ -602,113 +659,102 @@ body {
   transition: background 160ms ease;
 }
 .persist-toggle:hover {
-  background: rgba(20, 22, 35, 0.04);
+  background: rgba(0, 0, 0, 0.03);
 }
 .dark .persist-toggle:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
 }
 .persist-toggle:focus-visible {
-  outline: 2px solid rgba(80, 100, 220, 0.45);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 .persist-track {
   position: relative;
-  width: 32px;
-  height: 18px;
+  width: 36px;
+  height: 20px;
   border-radius: 999px;
-  background: rgba(20, 22, 35, 0.18);
+  background: rgba(0, 0, 0, 0.15);
   transition: background 200ms ease;
   flex-shrink: 0;
 }
 .dark .persist-track {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.15);
 }
 .persist-toggle.is-on .persist-track {
-  background: hsl(155 60% 45%);
+  background: hsl(155 55% 42%);
 }
 
 .persist-thumb {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
   transition: transform 200ms var(--ease-out-quart);
 }
 .persist-toggle.is-on .persist-thumb {
-  transform: translateX(14px);
+  transform: translateX(16px);
 }
 
 .persist-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
-  color: rgb(60 65 80);
-  letter-spacing: -0.005em;
-}
-.dark .persist-label {
-  color: rgb(220 225 235);
+  color: var(--text-primary);
 }
 
 .clear-all-button {
-  padding: 6px 12px;
+  padding: 7px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(20, 22, 35, 0.1);
+  border: 1px solid var(--border-color);
   background: transparent;
-  color: rgb(140 35 35);
-  font-size: 12px;
+  color: hsl(0 60% 45%);
+  font-size: 13px;
   font-weight: 500;
-  letter-spacing: -0.005em;
   cursor: pointer;
-  transition:
-    background 160ms ease,
-    color 160ms ease,
-    border-color 160ms ease;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 .clear-all-button:hover:not(:disabled) {
-  background: rgba(180, 35, 35, 0.08);
-  border-color: rgba(180, 35, 35, 0.3);
+  background: hsla(0, 60%, 45%, 0.06);
+  border-color: hsla(0, 60%, 45%, 0.25);
 }
 .clear-all-button:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 .dark .clear-all-button {
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgb(255 130 130);
+  color: hsl(0 70% 70%);
 }
 .dark .clear-all-button:hover:not(:disabled) {
-  background: rgba(255, 130, 130, 0.1);
-  border-color: rgba(255, 130, 130, 0.3);
+  background: hsla(0, 70%, 70%, 0.08);
+  border-color: hsla(0, 70%, 70%, 0.25);
 }
 
+/* Transcript list */
 .transcript-list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 14px 20px 20px;
+  padding: 16px 20px 24px;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
 
 .transcript-empty {
-  margin: 32px 0;
+  margin: 36px 0;
   text-align: center;
-  font-size: 14px;
-  letter-spacing: 0.02em;
+  font-size: 15px;
+  color: var(--text-secondary);
 }
 
 .turn {
-  padding: 12px 0;
+  padding: 14px 0;
 }
 .turn + .turn {
-  border-top: 1px solid rgba(20, 22, 35, 0.05);
-}
-.dark .turn + .turn {
-  border-top-color: rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-color);
 }
 
 .turn-meta {
@@ -719,47 +765,67 @@ body {
 }
 
 .turn-speaker {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 .turn-learner .turn-speaker {
-  color: hsl(192 70% 38%);
+  color: hsl(190 65% 40%);
 }
 .turn-tutor .turn-speaker {
-  color: hsl(14 72% 50%);
+  color: hsl(14 68% 48%);
 }
 .dark .turn-learner .turn-speaker {
-  color: hsl(180 70% 65%);
+  color: hsl(180 65% 62%);
 }
 .dark .turn-tutor .turn-speaker {
-  color: hsl(20 80% 70%);
+  color: hsl(20 75% 68%);
 }
 
 .turn-time {
-  font-size: 11px;
+  font-size: 12px;
+  color: var(--text-secondary);
   font-feature-settings: 'tnum';
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
 }
 
 .turn-text {
   margin: 0;
   font-size: 15px;
-  line-height: 1.55;
-  letter-spacing: -0.005em;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+.turn-error {
+  color: var(--text-secondary);
+}
+
+/* Correction highlighting */
+.correction-highlight {
+  background: hsla(45, 90%, 55%, 0.18);
+  border-radius: 3px;
+  padding: 1px 2px;
+}
+.dark .correction-highlight {
+  background: hsla(45, 80%, 50%, 0.15);
 }
 
 /* ============================================================ *
- *   ACCESSIBILITY: reduced motion
+ *  MIC PERMISSION ERROR MODAL
+ * ============================================================ */
+
+/* uses UnoCSS utility classes — no custom CSS needed */
+
+/* ============================================================ *
+ *  ACCESSIBILITY: reduced motion
  * ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
   .bubble-core,
   .ripple,
   .orbit,
-  .bubble-stage.is-idle .bubble-core {
+  .bubble-stage.is-idle .bubble-core,
+  .bubble-stage.is-processing .bubble-core {
     animation: none !important;
   }
   .transcript {

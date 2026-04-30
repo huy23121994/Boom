@@ -1,4 +1,4 @@
-import { useEffect, useRef, type FC } from 'react'
+import { useEffect, useRef, type FC, type ReactNode } from 'react'
 import {
   useConversationStore,
   usePrefs,
@@ -21,6 +21,23 @@ function formatRelative(timestamp: number, now: number): string {
   if (diffHr < 24) return `${diffHr}h ago`
   const diffDay = Math.round(diffHr / 24)
   return `${diffDay}d ago`
+}
+
+const CORRECTION_PATTERN = /\b[Bb]y the way,?\s+(?:we (?:usually|normally|often) say|you (?:can|could|might|should) say|it(?:'s| is) (?:better|more natural|more common) to say|the correct (?:way|form) is|instead of)\b/
+
+function highlightCorrections(text: string): ReactNode {
+  const match = text.match(CORRECTION_PATTERN)
+  if (!match || match.index === undefined) return text
+
+  const before = text.slice(0, match.index)
+  const rest = text.slice(match.index)
+
+  return (
+    <>
+      {before}
+      <span className="correction-highlight">{rest}</span>
+    </>
+  )
 }
 
 export const Transcript: FC<TranscriptProps> = ({ open, onClose }) => {
@@ -48,31 +65,31 @@ export const Transcript: FC<TranscriptProps> = ({ open, onClose }) => {
 
   return (
     <aside
-      className={`transcript bg-elevated border border-default ${open ? 'is-open' : ''}`}
+      className={`transcript ${open ? 'is-open' : ''}`}
       aria-hidden={!open}
       role="complementary"
       aria-label="Conversation transcript"
     >
-      <header className="transcript-head border-b border-default">
-        <span className="transcript-label text-muted">Conversation</span>
+      <header className="transcript-head">
+        <span className="transcript-label">Conversation</span>
         <button
           type="button"
           aria-label="Close transcript"
           onClick={onClose}
           className="transcript-close"
         >
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path
               d="M6 6l12 12M18 6L6 18"
               stroke="currentColor"
-              strokeWidth="1.8"
+              strokeWidth="2"
               strokeLinecap="round"
               fill="none"
             />
           </svg>
         </button>
       </header>
-      <div className="transcript-toolbar border-b border-default">
+      <div className="transcript-toolbar">
         <button
           type="button"
           role="switch"
@@ -83,7 +100,7 @@ export const Transcript: FC<TranscriptProps> = ({ open, onClose }) => {
           <span className="persist-track" aria-hidden="true">
             <span className="persist-thumb" />
           </span>
-          <span className="persist-label">Save to this device</span>
+          <span className="persist-label">Save history</span>
         </button>
         <button
           type="button"
@@ -96,7 +113,7 @@ export const Transcript: FC<TranscriptProps> = ({ open, onClose }) => {
       </div>
       <div className="transcript-list" ref={listRef}>
         {turns.length === 0 ? (
-          <p className="transcript-empty text-muted">Your conversation will appear here.</p>
+          <p className="transcript-empty">Your conversation will appear here.</p>
         ) : (
           turns.map((turn) => <Turn key={turn.id} turn={turn} now={now} />)
         )}
@@ -106,20 +123,23 @@ export const Transcript: FC<TranscriptProps> = ({ open, onClose }) => {
 }
 
 const Turn: FC<{ turn: ConversationTurn; now: number }> = ({ turn, now }) => {
+  const isTutor = turn.speaker === 'tutor'
   return (
     <article className={`turn turn-${turn.speaker}`}>
       <div className="turn-meta">
         <span className="turn-speaker">
-          {turn.speaker === 'learner' ? 'You' : 'Tutor'}
+          {isTutor ? 'Tutor' : 'You'}
         </span>
-        <span className="turn-time text-muted">{formatRelative(turn.timestamp, now)}</span>
+        <span className="turn-time">{formatRelative(turn.timestamp, now)}</span>
       </div>
       {turn.error ? (
-        <p className="turn-text text-muted" aria-label="Reply unavailable">
-          <span aria-hidden="true">⚠</span> Reply unavailable
+        <p className="turn-text turn-error" aria-label="Reply unavailable">
+          Reply unavailable
         </p>
       ) : (
-        <p className="turn-text text-default">{turn.text}</p>
+        <p className="turn-text">
+          {isTutor ? highlightCorrections(turn.text) : turn.text}
+        </p>
       )}
     </article>
   )
