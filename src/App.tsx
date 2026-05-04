@@ -9,7 +9,7 @@ import { Transcript } from '@/components/Transcript'
 import { TranscriptToggle } from '@/components/TranscriptToggle'
 import { useConversationLoop } from '@/hooks/useConversationLoop'
 import { loadPrefs, loadTranscript } from '@/lib/storage'
-import { setVoiceName } from '@/lib/tts'
+import { setVoiceName, unlock as unlockTts } from '@/lib/tts'
 import { useConversationStore } from '@/state/conversation'
 
 function App() {
@@ -27,6 +27,7 @@ function App() {
 
   const handleBubbleTap = (): void => {
     if (!started) {
+      unlockTts()
       setStarted(true)
       begin()
       return

@@ -56,21 +56,40 @@ export function getCurrentVoiceName(): string | null {
 }
 
 function speakWithVoice(text: string, rate: number): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<void>((resolve) => {
+    const synth = window.speechSynthesis
     const utter = new SpeechSynthesisUtterance(text)
     if (cachedVoice) utter.voice = cachedVoice
     utter.rate = rate
     utter.pitch = 1.0
     utter.volume = 1.0
-    utter.onend = () => resolve()
-    utter.onerror = (event) => {
-      if (event.error === 'canceled') {
-        resolve()
+
+    let settled = false
+    const finish = () => {
+      if (settled) return
+      settled = true
+      clearTimeout(watchdog)
+      clearInterval(keepAlive)
+      resolve()
+    }
+
+    utter.onend = finish
+    utter.onerror = finish
+
+    // iOS Safari: onend can silently never fire
+    const watchdog = setTimeout(finish, Math.max(text.length * 150, 8000))
+
+    // iOS Safari: pause+resume prevents engine from stalling mid-utterance
+    const keepAlive = setInterval(() => {
+      if (!synth.speaking) {
+        finish()
         return
       }
-      reject(new Error(`TTS error: ${event.error}`))
-    }
-    window.speechSynthesis.speak(utter)
+      synth.pause()
+      synth.resume()
+    }, 3000)
+
+    synth.speak(utter)
   })
 }
 
@@ -102,6 +121,15 @@ export function preview(rate: number): Promise<void> {
     utter.onerror = () => resolve()
     window.speechSynthesis.speak(utter)
   })
+}
+
+export function unlock(): void {
+  window.speechSynthesis.cancel()
+  const utter = new SpeechSynthesisUtterance(' ')
+  utter.volume = 0
+  window.speechSynthesis.speak(utter)
+  // Clear queue so the silent utterance doesn't block real speech
+  setTimeout(() => window.speechSynthesis.cancel(), 200)
 }
 
 export function cancel(): void {
