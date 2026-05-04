@@ -26,7 +26,15 @@ export const VoiceSelector: FC<VoiceSelectorProps> = ({ pauseMic, resumeMic }) =
     return () => window.speechSynthesis.removeEventListener('voiceschanged', load)
   }, [])
 
-  const currentName = voiceName ?? getCurrentVoiceName() ?? 'Default'
+  useEffect(() => {
+    if (!voiceName && voices.length > 0) {
+      const fallback = getCurrentVoiceName() ?? voices[0].name
+      setVoiceName(fallback)
+      useConversationStore.getState().setVoiceName(fallback)
+    }
+  }, [voiceName, voices])
+
+  const currentName = voiceName ?? getCurrentVoiceName() ?? ''
   const shortName = currentName.replace(/\s*\(.*\)/, '').split(' ').slice(0, 2).join(' ')
 
   const handleOpen = () => {
@@ -39,7 +47,7 @@ export const VoiceSelector: FC<VoiceSelectorProps> = ({ pauseMic, resumeMic }) =
     resumeMic()
   }
 
-  const handleSelect = (name: string | null) => {
+  const handleSelect = (name: string) => {
     setVoiceName(name)
     useConversationStore.getState().setVoiceName(name)
     setOpen(false)
@@ -78,23 +86,13 @@ export const VoiceSelector: FC<VoiceSelectorProps> = ({ pauseMic, resumeMic }) =
         <>
           <div className="voice-selector-backdrop" onClick={handleClose} />
           <div className="voice-selector-dropdown" role="listbox" aria-label="Select voice">
-            <button
-              type="button"
-              role="option"
-              aria-selected={voiceName === null}
-              className={`voice-option ${voiceName === null ? 'is-selected' : ''}`}
-              onClick={() => handleSelect(null)}
-            >
-              <span className="voice-option-name">Auto</span>
-              <span className="voice-option-detail">Best available</span>
-            </button>
             {voices.map((v) => (
               <button
                 type="button"
                 role="option"
-                aria-selected={voiceName === v.name}
+                aria-selected={currentName === v.name}
                 key={v.name}
-                className={`voice-option ${voiceName === v.name ? 'is-selected' : ''}`}
+                className={`voice-option ${currentName === v.name ? 'is-selected' : ''}`}
                 onClick={() => handleSelect(v.name)}
               >
                 <span className="voice-option-name">{v.name.replace(/\s*\(.*\)/, '')}</span>

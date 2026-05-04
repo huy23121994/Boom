@@ -36,19 +36,23 @@ export function setVoiceName(name: string | null): void {
 }
 
 const CURATED_VOICES = [
-  'Samantha', 'Allison', 'Ava', 'Karen', 'Daniel',
+  'Samantha',
+  'Ava',
+  'Daniel',
+  'Karen',
   'Google US English',
   'Google UK English Female',
   'Google UK English Male',
 ]
 
-function isCurated(name: string): boolean {
-  return CURATED_VOICES.some((c) => name.startsWith(c))
-}
-
 export function getEnglishVoices(): SpeechSynthesisVoice[] {
   const voices = window.speechSynthesis.getVoices()
-  return voices.filter((v) => v.lang.startsWith('en') && isCurated(v.name))
+  const matches: SpeechSynthesisVoice[] = []
+  for (const name of CURATED_VOICES) {
+    const v = voices.find((v) => v.name.startsWith(name))
+    if (v) matches.push(v)
+  }
+  return matches
 }
 
 export function getCurrentVoiceName(): string | null {
@@ -128,8 +132,6 @@ export function unlock(): void {
   const utter = new SpeechSynthesisUtterance(' ')
   utter.volume = 0
   window.speechSynthesis.speak(utter)
-  // Clear queue so the silent utterance doesn't block real speech
-  setTimeout(() => window.speechSynthesis.cancel(), 200)
 }
 
 export function cancel(): void {
