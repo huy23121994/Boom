@@ -14,9 +14,9 @@ export type ThemeMode = 'light' | 'dark' | 'system'
 export type SpeechRate = 'slow' | 'normal' | 'fast'
 
 export const SPEECH_RATE_VALUES: Record<SpeechRate, number> = {
-  slow: 0.78,
-  normal: 1.0,
-  fast: 1.2,
+  slow: 0.65,
+  normal: 0.85,
+  fast: 1.0,
 }
 
 export type ActiveError = 'mic-denied' | 'transport' | 'provider' | undefined
@@ -33,6 +33,7 @@ export interface PersistencePreference {
   persistEnabled: boolean
   theme: ThemeMode
   speechRate: SpeechRate
+  voiceName: string | null
   version: number
 }
 
@@ -57,6 +58,7 @@ export interface ConversationStore extends Conversation {
   togglePersist: (next: boolean) => void
   setTheme: (mode: ThemeMode) => void
   setSpeechRate: (rate: SpeechRate) => void
+  setVoiceName: (name: string | null) => void
   setSubtitle: (text: string) => void
   setInterimTranscript: (text: string) => void
 }
@@ -65,6 +67,7 @@ const DEFAULT_PREFS: PersistencePreference = {
   persistEnabled: false,
   theme: 'system',
   speechRate: 'normal',
+  voiceName: null,
   version: 1,
 }
 
@@ -157,6 +160,14 @@ export const useConversationStore = create<ConversationStore>()((set) => ({
   setSpeechRate: (rate) => {
     set((s) => {
       const newPrefs: PersistencePreference = { ...s.prefs, speechRate: rate }
+      savePrefs(newPrefs)
+      return { prefs: newPrefs }
+    })
+  },
+
+  setVoiceName: (name) => {
+    set((s) => {
+      const newPrefs: PersistencePreference = { ...s.prefs, voiceName: name }
       savePrefs(newPrefs)
       return { prefs: newPrefs }
     })

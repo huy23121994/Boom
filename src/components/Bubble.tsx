@@ -56,7 +56,7 @@ export const Bubble: FC<BubbleProps> = ({ onTap, started }) => {
               onTap()
               return
             }
-            if (state === 'listening') onTap()
+            if (state === 'listening' || state === 'speaking') onTap()
           }}
         >
           {!started && (

@@ -3,11 +3,13 @@ import { Bubble } from '@/components/Bubble'
 import { MicPermissionError } from '@/components/MicPermissionError'
 import { SpeedControl } from '@/components/SpeedControl'
 import { Subtitle } from '@/components/Subtitle'
+import { VoiceSelector } from '@/components/VoiceSelector'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Transcript } from '@/components/Transcript'
 import { TranscriptToggle } from '@/components/TranscriptToggle'
 import { useConversationLoop } from '@/hooks/useConversationLoop'
 import { loadPrefs, loadTranscript } from '@/lib/storage'
+import { setVoiceName } from '@/lib/tts'
 import { useConversationStore } from '@/state/conversation'
 
 function App() {
@@ -18,9 +20,10 @@ function App() {
     const prefs = loadPrefs()
     const persistedTurns = prefs.persistEnabled ? loadTranscript() : []
     useConversationStore.getState().boot({ persistedTurns, prefs })
+    if (prefs.voiceName) setVoiceName(prefs.voiceName)
   }, [])
 
-  const { begin, stop, endTurnByTap, retryAfterMicError } = useConversationLoop()
+  const { begin, stop, endTurnByTap, interruptSpeaking, pauseMic, resumeMic, retryAfterMicError } = useConversationLoop()
 
   const handleBubbleTap = (): void => {
     if (!started) {
@@ -29,6 +32,7 @@ function App() {
       return
     }
     endTurnByTap()
+    interruptSpeaking()
   }
 
   const handleStop = (): void => {
@@ -48,7 +52,8 @@ function App() {
         <Bubble onTap={handleBubbleTap} started={started} />
         {started && (
           <div className="controls-row">
-            <SpeedControl />
+            <VoiceSelector pauseMic={pauseMic} resumeMic={resumeMic} />
+            <SpeedControl pauseMic={pauseMic} resumeMic={resumeMic} />
             <button
               type="button"
               onClick={handleStop}

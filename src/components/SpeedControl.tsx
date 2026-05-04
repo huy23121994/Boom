@@ -1,21 +1,34 @@
 import type { FC } from 'react'
-import { useConversationStore, usePrefs, type SpeechRate } from '@/state/conversation'
+import { preview } from '@/lib/tts'
+import {
+  SPEECH_RATE_VALUES,
+  useConversationStore,
+  usePrefs,
+  type SpeechRate,
+} from '@/state/conversation'
 
 const CYCLE: SpeechRate[] = ['slow', 'normal', 'fast']
 
 const LABELS: Record<SpeechRate, string> = {
-  slow: '0.8x',
-  normal: '1x',
-  fast: '1.2x',
+  slow: '0.65x',
+  normal: '0.85x',
+  fast: '1x',
 }
 
-export const SpeedControl: FC = () => {
+interface SpeedControlProps {
+  pauseMic: () => void
+  resumeMic: () => void
+}
+
+export const SpeedControl: FC<SpeedControlProps> = ({ pauseMic, resumeMic }) => {
   const { speechRate } = usePrefs()
 
   const handleCycle = (): void => {
     const idx = CYCLE.indexOf(speechRate)
     const next = CYCLE[(idx + 1) % CYCLE.length]
     useConversationStore.getState().setSpeechRate(next)
+    pauseMic()
+    void preview(SPEECH_RATE_VALUES[next]).then(resumeMic)
   }
 
   return (

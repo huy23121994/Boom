@@ -1,20 +1,21 @@
 import type { FC } from 'react'
-import { useBubbleState, useInterimTranscript, useSubtitle } from '@/state/conversation'
+import { useInterimTranscript, useSubtitle } from '@/state/conversation'
 
 export const Subtitle: FC = () => {
-  const subtitle = useSubtitle()
-  const interim = useInterimTranscript()
-  const state = useBubbleState()
+  const aiSubtitle = useSubtitle()
+  const userInterim = useInterimTranscript()
 
-  const isListening = state === 'listening'
-  const text = isListening ? interim : subtitle
-  const visible = text.length > 0
+  const showAi = aiSubtitle.length > 0
+  const showUser = userInterim.length > 0
 
   return (
-    <div className={`subtitle-bar ${visible ? 'is-visible' : ''}`} aria-live="polite">
-      <span className={`subtitle-text ${isListening ? 'is-user' : 'is-tutor'}`}>
-        {text}
-      </span>
+    <div className="subtitle-container">
+      <div className={`subtitle-bar subtitle-ai ${showAi ? 'is-visible' : ''}`} aria-live="polite">
+        <span className="subtitle-text is-tutor">{aiSubtitle}</span>
+      </div>
+      <div className={`subtitle-bar subtitle-user ${showUser ? 'is-visible' : ''}`} aria-live="polite">
+        <span className="subtitle-text is-user">{userInterim}</span>
+      </div>
     </div>
   )
 }

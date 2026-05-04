@@ -22,14 +22,13 @@ const SILENCE_PROMPT_MS = 30_000
 const SILENCE_END_MS = 60_000
 const MAX_TURN_MS = 90_000
 const THINKING_WATCHDOG_MS = 10_000
-const HESITATION_WINDOW_MS = 2500
-const MIN_WORDS_FOR_IMMEDIATE_SEND = 3
+const HESITATION_WINDOW_MS = 1500
 
 interface RuntimeRefs {
   stopped: boolean
+  interrupted: boolean
   vadHandle: VADHandle | null
   sttHandle: STTHandle | null
-  bargeInVadHandle: VADHandle | null
   finalTranscript: string
   silencePromptTimer: ReturnType<typeof setTimeout> | null
   silenceEndTimer: ReturnType<typeof setTimeout> | null
@@ -38,7 +37,6 @@ interface RuntimeRefs {
   hesitationTimer: ReturnType<typeof setTimeout> | null
   resolveTurnEnd: ((reason: TurnEndReason) => void) | null
   perfMarks: { vadEnd?: number; sttFinal?: number; aiFirstToken?: number }
-  bargedIn: boolean
 }
 
 type TurnEndReason =
@@ -49,6 +47,7 @@ type TurnEndReason =
   | 'silence-end'
   | 'stopped'
   | 'vad-failed'
+  | 'preview'
 
 function clearTimer(t: ReturnType<typeof setTimeout> | null): null {
   if (t !== null) clearTimeout(t)
@@ -62,23 +61,25 @@ function makeId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
-function looksIncomplete(text: string): boolean {
+function looksLikeHesitation(text: string): boolean {
   const words = text.trim().split(/\s+/)
-  if (words.length < MIN_WORDS_FOR_IMMEDIATE_SEND) return true
+  if (words.length === 0 || (words.length === 1 && words[0] === '')) return true
   const last = words[words.length - 1].toLowerCase()
-  const hesitationWords = ['uh', 'um', 'like', 'and', 'but', 'so', 'or', 'the', 'a', 'an', 'to', 'in', 'i']
-  return hesitationWords.includes(last)
+  const fillers = ['uh', 'um', 'hmm', 'er', 'ah']
+  return fillers.includes(last)
 }
 
 async function probeMic(): Promise<boolean> {
   if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+    console.error('[boom] probeMic: mediaDevices.getUserMedia not available')
     return false
   }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     stream.getTracks().forEach((t) => t.stop())
     return true
-  } catch {
+  } catch (err) {
+    console.error('[boom] probeMic failed:', err)
     return false
   }
 }
@@ -95,7 +96,7 @@ async function streamAndSpeak(messages: ReturnType<typeof buildMessages>, refs: 
 
   const collect = async function* () {
     for await (const delta of sendChatStream(messages)) {
-      if (refs.stopped || refs.bargedIn) return
+      if (refs.stopped || refs.interrupted) return
       if (firstToken) {
         firstToken = false
         refs.perfMarks.aiFirstToken = performance.now()
@@ -111,7 +112,7 @@ async function streamAndSpeak(messages: ReturnType<typeof buildMessages>, refs: 
 
   let firstSentence = true
   for await (const sentence of chunkSentences(collect())) {
-    if (refs.stopped || refs.bargedIn) break
+    if (refs.stopped || refs.interrupted) break
     if (firstSentence) {
       firstSentence = false
       const store = useConversationStore.getState()
@@ -121,8 +122,8 @@ async function streamAndSpeak(messages: ReturnType<typeof buildMessages>, refs: 
     }
     useConversationStore.getState().setSubtitle(sentence)
     await speak(sentence, rate)
+    if (refs.interrupted) break
   }
-  useConversationStore.getState().setSubtitle('')
   return fullText.trim()
 }
 
@@ -140,30 +141,6 @@ function logTurnPerf(refs: RuntimeRefs, ttsFirstAudio: number): void {
   console.info(`[turn-perf] vad-end → tts-first-audio (TOTAL): ${total} ms`)
 }
 
-function startBargeInDetection(refs: RuntimeRefs): void {
-  void startVAD({
-    onSpeechStart: () => {
-      if (refs.stopped) return
-      const store = useConversationStore.getState()
-      if (store.bubbleState === 'speaking') {
-        refs.bargedIn = true
-        ttsCancel()
-        store.setSubtitle('')
-        store.setBubble('listening')
-        refs.bargeInVadHandle?.stop()
-        refs.bargeInVadHandle = null
-      }
-    },
-    onSpeechEnd: () => {},
-  }).then((handle) => {
-    if (refs.stopped || refs.bargedIn) {
-      handle.stop()
-      return
-    }
-    refs.bargeInVadHandle = handle
-  }).catch(() => {})
-}
-
 async function runGreeting(refs: RuntimeRefs): Promise<void> {
   const store = useConversationStore.getState()
   store.setError(undefined)
@@ -175,13 +152,10 @@ async function runGreeting(refs: RuntimeRefs): Promise<void> {
     useConversationStore.getState().setError('transport')
   }, THINKING_WATCHDOG_MS)
 
-  refs.bargedIn = false
-  startBargeInDetection(refs)
+  refs.interrupted = false
 
   try {
     const text = await streamAndSpeak(buildGreetingMessages(), refs)
-    refs.bargeInVadHandle?.stop()
-    refs.bargeInVadHandle = null
     if (text.length > 0) {
       const turn: ConversationTurn = {
         id: makeId(),
@@ -195,8 +169,6 @@ async function runGreeting(refs: RuntimeRefs): Promise<void> {
     handleAiError(err)
   } finally {
     refs.thinkingWatchdogTimer = clearTimer(refs.thinkingWatchdogTimer)
-    refs.bargeInVadHandle?.stop()
-    refs.bargeInVadHandle = null
   }
 }
 
@@ -215,15 +187,11 @@ async function runSilencePrompt(refs: RuntimeRefs): Promise<void> {
   if (store.bubbleState === 'listening') {
     store.setBubble('thinking')
   }
-  refs.bargedIn = false
-  startBargeInDetection(refs)
+  refs.interrupted = false
   try {
     await streamAndSpeak(buildSilencePromptMessages(store.turns), refs)
   } catch (err) {
     handleAiError(err)
-  } finally {
-    refs.bargeInVadHandle?.stop()
-    refs.bargeInVadHandle = null
   }
 }
 
@@ -236,7 +204,7 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
   store.setInterimTranscript('')
   refs.finalTranscript = ''
   refs.perfMarks = {}
-  refs.bargedIn = false
+  refs.interrupted = false
 
   const reason = await new Promise<TurnEndReason>((resolve) => {
     refs.resolveTurnEnd = resolve
@@ -250,7 +218,7 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
         refs.perfMarks.vadEnd = performance.now()
 
         const currentText = refs.finalTranscript.trim()
-        if (looksIncomplete(currentText)) {
+        if (looksLikeHesitation(currentText)) {
           refs.hesitationTimer = setTimeout(() => {
             refs.resolveTurnEnd?.('vad')
           }, HESITATION_WINDOW_MS)
@@ -311,6 +279,13 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
     return
   }
 
+  if (reason === 'preview') {
+    refs.sttHandle?.stop()
+    refs.sttHandle = null
+    useConversationStore.getState().setInterimTranscript('')
+    return
+  }
+
   if (reason === 'silence-prompt') {
     refs.sttHandle?.stop()
     refs.sttHandle = null
@@ -330,7 +305,6 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
 
   refs.sttHandle?.stop()
   refs.sttHandle = null
-  await new Promise((r) => setTimeout(r, 400))
 
   const finalText = refs.finalTranscript.trim()
   useConversationStore.getState().setInterimTranscript('')
@@ -350,6 +324,7 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
   }
   const storeNow = useConversationStore.getState()
   storeNow.appendTurn(learnerTurn)
+  storeNow.setSubtitle('')
   storeNow.setBubble('thinking')
 
   refs.thinkingWatchdogTimer = setTimeout(() => {
@@ -359,8 +334,7 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
     refs.resolveTurnEnd?.('stopped')
   }, THINKING_WATCHDOG_MS)
 
-  refs.bargedIn = false
-  startBargeInDetection(refs)
+  refs.interrupted = false
 
   const ttsFirstAudio = performance.now()
   try {
@@ -368,8 +342,6 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
       buildMessages(useConversationStore.getState().turns),
       refs,
     )
-    refs.bargeInVadHandle?.stop()
-    refs.bargeInVadHandle = null
     if (replyText.length > 0) {
       const tutorTurn: ConversationTurn = {
         id: makeId(),
@@ -388,8 +360,6 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
     }
   } finally {
     refs.thinkingWatchdogTimer = clearTimer(refs.thinkingWatchdogTimer)
-    refs.bargeInVadHandle?.stop()
-    refs.bargeInVadHandle = null
   }
 }
 
@@ -413,15 +383,18 @@ export interface UseConversationLoop {
   begin: () => void
   stop: () => void
   endTurnByTap: () => void
+  interruptSpeaking: () => void
+  pauseMic: () => void
+  resumeMic: () => void
   retryAfterMicError: () => Promise<void>
 }
 
 export function useConversationLoop(): UseConversationLoop {
   const refs = useRef<RuntimeRefs>({
     stopped: false,
+    interrupted: false,
     vadHandle: null,
     sttHandle: null,
-    bargeInVadHandle: null,
     finalTranscript: '',
     silencePromptTimer: null,
     silenceEndTimer: null,
@@ -430,7 +403,6 @@ export function useConversationLoop(): UseConversationLoop {
     hesitationTimer: null,
     resolveTurnEnd: null,
     perfMarks: {},
-    bargedIn: false,
   })
   const startedRef = useRef(false)
 
@@ -445,7 +417,6 @@ export function useConversationLoop(): UseConversationLoop {
       r.hesitationTimer = clearTimer(r.hesitationTimer)
       r.vadHandle?.stop()
       r.sttHandle?.stop()
-      r.bargeInVadHandle?.stop()
       ttsCancel()
       r.resolveTurnEnd?.('stopped')
     }
@@ -470,8 +441,6 @@ export function useConversationLoop(): UseConversationLoop {
       r.vadHandle = null
       r.sttHandle?.stop()
       r.sttHandle = null
-      r.bargeInVadHandle?.stop()
-      r.bargeInVadHandle = null
       ttsCancel()
       r.resolveTurnEnd?.('stopped')
       startedRef.current = false
@@ -489,13 +458,33 @@ export function useConversationLoop(): UseConversationLoop {
       refs.current.hesitationTimer = clearTimer(refs.current.hesitationTimer)
       refs.current.resolveTurnEnd?.('tap')
     },
+    interruptSpeaking: () => {
+      const store = useConversationStore.getState()
+      if (store.bubbleState !== 'speaking') return
+      refs.current.interrupted = true
+      ttsCancel()
+      store.setSubtitle('')
+    },
+    pauseMic: () => {
+      const r = refs.current
+      r.vadHandle?.stop()
+      r.vadHandle = null
+      r.sttHandle?.stop()
+      r.sttHandle = null
+      r.silencePromptTimer = clearTimer(r.silencePromptTimer)
+      r.silenceEndTimer = clearTimer(r.silenceEndTimer)
+      r.maxTurnTimer = clearTimer(r.maxTurnTimer)
+      r.hesitationTimer = clearTimer(r.hesitationTimer)
+    },
+    resumeMic: () => {
+      refs.current.resolveTurnEnd?.('preview')
+    },
     retryAfterMicError: async () => {
       const granted = await probeMic()
       if (granted) {
         useConversationStore.getState().setError(undefined)
-        if (!refs.current.stopped) {
-          await runGreeting(refs.current)
-        }
+        refs.current.stopped = false
+        void runLoop(refs.current)
       }
     },
   }

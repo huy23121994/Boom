@@ -13,6 +13,7 @@ const DEFAULT_PREFS: PersistencePreference = {
   persistEnabled: false,
   theme: 'system',
   speechRate: 'normal',
+  voiceName: null,
   version: SCHEMA_VERSION,
 }
 
@@ -39,11 +40,12 @@ export function loadPrefs(): PersistencePreference {
     ) {
       return { ...DEFAULT_PREFS }
     }
-    const obj = parsed as { persistEnabled?: unknown; theme?: unknown; speechRate?: unknown }
+    const obj = parsed as { persistEnabled?: unknown; theme?: unknown; speechRate?: unknown; voiceName?: unknown }
     return {
       persistEnabled: typeof obj.persistEnabled === 'boolean' ? obj.persistEnabled : false,
       theme: isThemeMode(obj.theme) ? obj.theme : 'system',
       speechRate: isSpeechRate(obj.speechRate) ? obj.speechRate : 'normal',
+      voiceName: typeof obj.voiceName === 'string' ? obj.voiceName : null,
       version: SCHEMA_VERSION,
     }
   } catch {
