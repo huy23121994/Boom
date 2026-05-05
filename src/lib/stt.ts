@@ -5,7 +5,7 @@ export interface STTCallbacks {
 }
 
 export interface STTHandle {
-  stop: () => void
+  stop: () => Promise<void>
 }
 
 interface RecognitionLike {
@@ -41,13 +41,14 @@ export function startRecognition(cb: STTCallbacks): STTHandle {
   const Ctor = getRecognitionCtor()
   if (!Ctor) {
     cb.onError(new Error('SpeechRecognition not supported'))
-    return { stop: () => {} }
+    return { stop: async () => {} }
   }
 
   let stopped = false
   let restartCount = 0
   let recognition: RecognitionLike | null = null
   let finalText = ''
+  let endResolve: (() => void) | null = null
 
   function deliverFinal(): void {
     const trimmed = finalText.trim()
@@ -62,6 +63,7 @@ export function startRecognition(cb: STTCallbacks): STTHandle {
 
     recognition.onresult = (event) => {
       let interim = ''
+      let gotFinal = false
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i]
         if (result.isFinal) {
@@ -70,9 +72,14 @@ export function startRecognition(cb: STTCallbacks): STTHandle {
             finalText += ' '
           }
           finalText += chunk
+          gotFinal = true
         } else {
           interim += result[0].transcript
         }
+      }
+      if (gotFinal) {
+        const trimmed = finalText.trim()
+        if (trimmed.length > 0) cb.onFinalTranscript(trimmed)
       }
       if (interim.length > 0) {
         const separator = finalText.length > 0 && !finalText.endsWith(' ') && !interim.startsWith(' ') ? ' ' : ''
@@ -83,6 +90,8 @@ export function startRecognition(cb: STTCallbacks): STTHandle {
     recognition.onend = () => {
       if (stopped) {
         deliverFinal()
+        endResolve?.()
+        endResolve = null
         return
       }
       if (restartCount >= MAX_AUTO_RESTARTS) {
@@ -111,9 +120,29 @@ export function startRecognition(cb: STTCallbacks): STTHandle {
   start()
 
   return {
-    stop: () => {
-      stopped = true
-      recognition?.stop()
-    },
+    stop: () =>
+      new Promise<void>((resolve) => {
+        if (stopped) {
+          resolve()
+          return
+        }
+        stopped = true
+        endResolve = resolve
+        // Safety net: browsers occasionally swallow `onend` after stop()
+        setTimeout(() => {
+          if (endResolve) {
+            deliverFinal()
+            endResolve()
+            endResolve = null
+          }
+        }, 600)
+        try {
+          recognition?.stop()
+        } catch {
+          deliverFinal()
+          resolve()
+          endResolve = null
+        }
+      }),
   }
 }

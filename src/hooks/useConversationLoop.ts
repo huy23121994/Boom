@@ -280,14 +280,14 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
   }
 
   if (reason === 'preview') {
-    refs.sttHandle?.stop()
+    void refs.sttHandle?.stop()
     refs.sttHandle = null
     useConversationStore.getState().setInterimTranscript('')
     return
   }
 
   if (reason === 'silence-prompt') {
-    refs.sttHandle?.stop()
+    void refs.sttHandle?.stop()
     refs.sttHandle = null
     useConversationStore.getState().setInterimTranscript('')
     await runSilencePrompt(refs)
@@ -295,7 +295,7 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
   }
 
   if (reason === 'silence-end') {
-    refs.sttHandle?.stop()
+    void refs.sttHandle?.stop()
     refs.sttHandle = null
     useConversationStore.getState().setInterimTranscript('')
     return
@@ -303,10 +303,15 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
 
   useConversationStore.getState().setBubble('processing')
 
-  refs.sttHandle?.stop()
+  const interimSnapshot = useConversationStore.getState().interimTranscript
+  const sttStop = refs.sttHandle?.stop()
   refs.sttHandle = null
+  if (sttStop) await sttStop
 
-  const finalText = refs.finalTranscript.trim()
+  let finalText = refs.finalTranscript.trim()
+  if (finalText.length === 0) {
+    finalText = interimSnapshot.trim()
+  }
   useConversationStore.getState().setInterimTranscript('')
 
   if (finalText.length === 0) {
@@ -416,7 +421,7 @@ export function useConversationLoop(): UseConversationLoop {
       r.thinkingWatchdogTimer = clearTimer(r.thinkingWatchdogTimer)
       r.hesitationTimer = clearTimer(r.hesitationTimer)
       r.vadHandle?.stop()
-      r.sttHandle?.stop()
+      void r.sttHandle?.stop()
       ttsCancel()
       r.resolveTurnEnd?.('stopped')
     }
@@ -439,7 +444,7 @@ export function useConversationLoop(): UseConversationLoop {
       r.hesitationTimer = clearTimer(r.hesitationTimer)
       r.vadHandle?.stop()
       r.vadHandle = null
-      r.sttHandle?.stop()
+      void r.sttHandle?.stop()
       r.sttHandle = null
       ttsCancel()
       r.resolveTurnEnd?.('stopped')
@@ -469,7 +474,7 @@ export function useConversationLoop(): UseConversationLoop {
       const r = refs.current
       r.vadHandle?.stop()
       r.vadHandle = null
-      r.sttHandle?.stop()
+      void r.sttHandle?.stop()
       r.sttHandle = null
       r.silencePromptTimer = clearTimer(r.silencePromptTimer)
       r.silenceEndTimer = clearTimer(r.silenceEndTimer)
