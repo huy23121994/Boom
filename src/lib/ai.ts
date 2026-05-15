@@ -137,6 +137,7 @@ export async function* sendChatStream(
       model: env.model,
       stream: true,
       messages,
+      response_format: { type: 'json_object' },
     }),
   }
   const res = await fetchWithRetry(url, init)

@@ -25,6 +25,7 @@ export interface ConversationTurn {
   id: string
   speaker: 'learner' | 'tutor'
   text: string
+  vi?: string
   timestamp: number
   error?: 'transport' | 'provider' | 'silence'
 }
@@ -42,6 +43,8 @@ export interface Conversation {
   bubbleState: BubbleState
   activeError: ActiveError
   currentSubtitle: string
+  currentSubtitleVi: string
+  translationEnabled: boolean
   interimTranscript: string
 }
 
@@ -60,7 +63,9 @@ export interface ConversationStore extends Conversation {
   setSpeechRate: (rate: SpeechRate) => void
   setVoiceName: (name: string | null) => void
   setSubtitle: (text: string) => void
+  setSubtitleVi: (text: string) => void
   setInterimTranscript: (text: string) => void
+  setTranslationEnabled: (enabled: boolean) => void
 }
 
 const DEFAULT_PREFS: PersistencePreference = {
@@ -88,6 +93,8 @@ export const useConversationStore = create<ConversationStore>()((set) => ({
   bubbleState: 'thinking',
   activeError: undefined,
   currentSubtitle: '',
+  currentSubtitleVi: '',
+  translationEnabled: false,
   interimTranscript: '',
   prefs: { ...DEFAULT_PREFS },
 
@@ -130,6 +137,7 @@ export const useConversationStore = create<ConversationStore>()((set) => ({
         prefs: newPrefs,
         activeError: undefined,
         currentSubtitle: '',
+        currentSubtitleVi: '',
         interimTranscript: '',
       }
     })
@@ -177,8 +185,16 @@ export const useConversationStore = create<ConversationStore>()((set) => ({
     set({ currentSubtitle: text })
   },
 
+  setSubtitleVi: (text) => {
+    set({ currentSubtitleVi: text })
+  },
+
   setInterimTranscript: (text) => {
     set({ interimTranscript: text })
+  },
+
+  setTranslationEnabled: (enabled) => {
+    set({ translationEnabled: enabled })
   },
 }))
 
@@ -194,5 +210,9 @@ export const useError = (): ActiveError =>
   useConversationStore((s) => s.activeError)
 export const useSubtitle = (): string =>
   useConversationStore((s) => s.currentSubtitle)
+export const useSubtitleVi = (): string =>
+  useConversationStore((s) => s.currentSubtitleVi)
+export const useTranslationEnabled = (): boolean =>
+  useConversationStore((s) => s.translationEnabled)
 export const useInterimTranscript = (): string =>
   useConversationStore((s) => s.interimTranscript)

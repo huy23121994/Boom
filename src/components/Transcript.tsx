@@ -3,6 +3,7 @@ import {
   useConversationStore,
   usePrefs,
   useTurns,
+  useTranslationEnabled,
   type ConversationTurn,
 } from '@/state/conversation'
 
@@ -43,6 +44,7 @@ function highlightCorrections(text: string): ReactNode {
 export const Transcript: FC<TranscriptProps> = ({ open, onClose }) => {
   const turns = useTurns()
   const prefs = usePrefs()
+  const translationEnabled = useTranslationEnabled()
   const listRef = useRef<HTMLDivElement>(null)
   const now = Date.now()
 
@@ -115,14 +117,14 @@ export const Transcript: FC<TranscriptProps> = ({ open, onClose }) => {
         {turns.length === 0 ? (
           <p className="transcript-empty">Your conversation will appear here.</p>
         ) : (
-          turns.map((turn) => <Turn key={turn.id} turn={turn} now={now} />)
+          turns.map((turn) => <Turn key={turn.id} turn={turn} now={now} translationEnabled={translationEnabled} />)
         )}
       </div>
     </aside>
   )
 }
 
-const Turn: FC<{ turn: ConversationTurn; now: number }> = ({ turn, now }) => {
+const Turn: FC<{ turn: ConversationTurn; now: number; translationEnabled: boolean }> = ({ turn, now, translationEnabled }) => {
   const isTutor = turn.speaker === 'tutor'
   return (
     <article className={`turn turn-${turn.speaker}`}>
@@ -137,9 +139,14 @@ const Turn: FC<{ turn: ConversationTurn; now: number }> = ({ turn, now }) => {
           Reply unavailable
         </p>
       ) : (
-        <p className="turn-text">
-          {isTutor ? highlightCorrections(turn.text) : turn.text}
-        </p>
+        <>
+          <p className="turn-text">
+            {isTutor ? highlightCorrections(turn.text) : turn.text}
+          </p>
+          {isTutor && translationEnabled && turn.vi && (
+            <p className="turn-text turn-vi">{turn.vi}</p>
+          )}
+        </>
       )}
     </article>
   )

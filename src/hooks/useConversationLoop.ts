@@ -89,42 +89,128 @@ function getSpeechRate(): number {
   return SPEECH_RATE_VALUES[rate]
 }
 
-async function streamAndSpeak(messages: ReturnType<typeof buildMessages>, refs: RuntimeRefs): Promise<string> {
+// Parses a (possibly partial) JSON object string and returns whatever
+// fields it can extract for "en" and "vi". Used both for the final parse
+// (when raw is a complete JSON object) and for live updates during streaming.
+function parseResponse(raw: string): { en: string; vi: string } {
+  const trimmed = raw.trim()
+  if (trimmed.length === 0) return { en: '', vi: '' }
+
+  // Fast path: try parsing as complete JSON
+  try {
+    const obj = JSON.parse(trimmed) as { en?: unknown; vi?: unknown }
+    return {
+      en: typeof obj.en === 'string' ? obj.en.trim() : '',
+      vi: typeof obj.vi === 'string' ? obj.vi.trim() : '',
+    }
+  } catch {
+    // Fall through to partial-JSON regex extraction
+  }
+
+  return {
+    en: extractJsonField(trimmed, 'en'),
+    vi: extractJsonField(trimmed, 'vi'),
+  }
+}
+
+// Extracts the value of a string field from a (possibly partial) JSON object.
+// Handles standard JSON escape sequences. Returns '' if the field isn't present
+// or its value can't be recovered yet.
+function extractJsonField(raw: string, field: string): string {
+  const keyPattern = new RegExp(`"${field}"\\s*:\\s*"`)
+  const keyMatch = raw.match(keyPattern)
+  if (!keyMatch || keyMatch.index === undefined) return ''
+  const valueStart = keyMatch.index + keyMatch[0].length
+
+  let result = ''
+  for (let i = valueStart; i < raw.length; i++) {
+    const ch = raw[i]
+    if (ch === '\\') {
+      const next = raw[i + 1]
+      if (next === undefined) break
+      if (next === 'n') result += '\n'
+      else if (next === 't') result += '\t'
+      else if (next === 'r') result += '\r'
+      else if (next === '"') result += '"'
+      else if (next === '\\') result += '\\'
+      else if (next === '/') result += '/'
+      else if (next === 'u' && i + 5 < raw.length) {
+        const hex = raw.slice(i + 2, i + 6)
+        if (/^[0-9a-fA-F]{4}$/.test(hex)) {
+          result += String.fromCharCode(parseInt(hex, 16))
+          i += 4
+        }
+      } else {
+        result += next
+      }
+      i++
+      continue
+    }
+    if (ch === '"') return result.trim()
+    result += ch
+  }
+  // Closing quote not yet streamed — return what we have so far
+  return result.trim()
+}
+
+async function streamAndSpeak(
+  messages: ReturnType<typeof buildMessages>,
+  refs: RuntimeRefs,
+): Promise<{ en: string; vi: string }> {
   let firstToken = true
-  let fullText = ''
+  let fullRaw = ''
   const rate = getSpeechRate()
 
-  const collect = async function* () {
-    for await (const delta of sendChatStream(messages)) {
-      if (refs.stopped || refs.interrupted) return
-      if (firstToken) {
-        firstToken = false
-        refs.perfMarks.aiFirstToken = performance.now()
-        if (refs.thinkingWatchdogTimer !== null) {
-          clearTimeout(refs.thinkingWatchdogTimer)
-          refs.thinkingWatchdogTimer = null
-        }
+  // Buffer the entire response first. While buffering, progressively update
+  // the VI subtitle so the user sees the translation as it streams.
+  for await (const delta of sendChatStream(messages)) {
+    if (refs.stopped || refs.interrupted) {
+      return parseResponse(fullRaw)
+    }
+    if (firstToken) {
+      firstToken = false
+      refs.perfMarks.aiFirstToken = performance.now()
+      if (refs.thinkingWatchdogTimer !== null) {
+        clearTimeout(refs.thinkingWatchdogTimer)
+        refs.thinkingWatchdogTimer = null
       }
-      fullText += delta
-      yield delta
+    }
+    fullRaw += delta
+
+    // Update VI subtitle live as the "vi" field streams in
+    const partialVi = extractJsonField(fullRaw, 'vi')
+    if (partialVi.length > 0) {
+      useConversationStore.getState().setSubtitleVi(partialVi)
     }
   }
 
-  let firstSentence = true
-  for await (const sentence of chunkSentences(collect())) {
+  // Stream complete — parse cleanly and speak only the English part
+  const { en, vi } = parseResponse(fullRaw)
+  // Ensure VI subtitle has final value (in case [VI]: was missing during stream)
+  useConversationStore.getState().setSubtitleVi(vi)
+
+  if (en.length === 0) return { en, vi }
+
+  const store = useConversationStore.getState()
+  if (store.bubbleState === 'thinking') {
+    store.setBubble('speaking')
+  }
+
+  // Sentence-by-sentence playback so the subtitle accumulates naturally
+  async function* yieldEnglish(): AsyncGenerator<string> {
+    yield en
+  }
+
+  let accSubtitle = ''
+  for await (const sentence of chunkSentences(yieldEnglish())) {
     if (refs.stopped || refs.interrupted) break
-    if (firstSentence) {
-      firstSentence = false
-      const store = useConversationStore.getState()
-      if (store.bubbleState === 'thinking') {
-        store.setBubble('speaking')
-      }
-    }
-    useConversationStore.getState().setSubtitle(sentence)
+    accSubtitle = accSubtitle ? `${accSubtitle} ${sentence}` : sentence
+    useConversationStore.getState().setSubtitle(accSubtitle)
     await speak(sentence, rate)
     if (refs.interrupted) break
   }
-  return fullText.trim()
+
+  return { en, vi }
 }
 
 function logTurnPerf(refs: RuntimeRefs, ttsFirstAudio: number): void {
@@ -155,12 +241,13 @@ async function runGreeting(refs: RuntimeRefs): Promise<void> {
   refs.interrupted = false
 
   try {
-    const text = await streamAndSpeak(buildGreetingMessages(), refs)
-    if (text.length > 0) {
+    const { en, vi } = await streamAndSpeak(buildGreetingMessages(), refs)
+    if (en.length > 0) {
       const turn: ConversationTurn = {
         id: makeId(),
         speaker: 'tutor',
-        text,
+        text: en,
+        vi: vi || undefined,
         timestamp: Date.now(),
       }
       useConversationStore.getState().appendTurn(turn)
@@ -330,6 +417,7 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
   const storeNow = useConversationStore.getState()
   storeNow.appendTurn(learnerTurn)
   storeNow.setSubtitle('')
+  storeNow.setSubtitleVi('')
   storeNow.setBubble('thinking')
 
   refs.thinkingWatchdogTimer = setTimeout(() => {
@@ -343,15 +431,16 @@ async function runListenTurn(refs: RuntimeRefs): Promise<void> {
 
   const ttsFirstAudio = performance.now()
   try {
-    const replyText = await streamAndSpeak(
+    const { en: replyEn, vi: replyVi } = await streamAndSpeak(
       buildMessages(useConversationStore.getState().turns),
       refs,
     )
-    if (replyText.length > 0) {
+    if (replyEn.length > 0) {
       const tutorTurn: ConversationTurn = {
         id: makeId(),
         speaker: 'tutor',
-        text: replyText,
+        text: replyEn,
+        vi: replyVi || undefined,
         timestamp: Date.now(),
       }
       useConversationStore.getState().appendTurn(tutorTurn)

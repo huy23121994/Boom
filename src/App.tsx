@@ -5,6 +5,7 @@ import { SpeedControl } from '@/components/SpeedControl'
 import { Subtitle } from '@/components/Subtitle'
 import { VoiceSelector } from '@/components/VoiceSelector'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { TranslationToggle } from '@/components/TranslationToggle'
 import { Transcript } from '@/components/Transcript'
 import { TranscriptToggle } from '@/components/TranscriptToggle'
 import { useConversationLoop } from '@/hooks/useConversationLoop'
@@ -47,6 +48,7 @@ function App() {
         open={transcriptOpen}
         onToggle={() => setTranscriptOpen((v) => !v)}
       />
+      <TranslationToggle />
       <ThemeToggle />
 
       <div className="bubble-area">
