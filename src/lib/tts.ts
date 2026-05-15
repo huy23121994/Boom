@@ -69,28 +69,33 @@ function speakWithVoice(text: string, rate: number): Promise<void> {
     utter.volume = 1.0
 
     let settled = false
+    let started = false
     const finish = () => {
       if (settled) return
       settled = true
       clearTimeout(watchdog)
+      clearTimeout(startTimeout)
       clearInterval(keepAlive)
       resolve()
     }
 
+    utter.onstart = () => { started = true }
     utter.onend = finish
     utter.onerror = finish
 
     // iOS Safari: onend can silently never fire
     const watchdog = setTimeout(finish, Math.max(text.length * 150, 8000))
 
-    // iOS Safari: pause+resume prevents engine from stalling mid-utterance
+    // iOS Safari: if onstart never fires within 3s, utterance was silently blocked
+    const startTimeout = setTimeout(() => { if (!started) finish() }, 3000)
+
+    // iOS Safari: resume if paused (background → foreground); avoid pause/resume — causes audible glitches
     const keepAlive = setInterval(() => {
       if (!synth.speaking) {
         finish()
         return
       }
-      synth.pause()
-      synth.resume()
+      if (synth.paused) synth.resume()
     }, 3000)
 
     synth.speak(utter)
@@ -129,8 +134,12 @@ export function preview(rate: number): Promise<void> {
 
 export function unlock(): void {
   window.speechSynthesis.cancel()
-  const utter = new SpeechSynthesisUtterance(' ')
-  utter.volume = 0
+  // iOS Safari requires the first speak() in a user gesture to have real phonemic content
+  // at volume > 0. A space character produces no audio samples so iOS skips opening the
+  // audio session even with volume 1.0; 'a' is the shortest real phoneme.
+  const utter = new SpeechSynthesisUtterance('a')
+  utter.volume = 1.0
+  utter.rate = 10
   window.speechSynthesis.speak(utter)
 }
 
